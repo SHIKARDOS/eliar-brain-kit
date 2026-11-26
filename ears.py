@@ -1,15 +1,15 @@
 """
-УШИ — аудио-анализатор для Claude
-Анализирует музыку и создаёт визуальное представление звука
+EARS — audio analyzer for Claude
+Analyzes music and creates a visual representation of sound
 
-Использование:
-  py ears.py <аудио_файл>
+Usage:
+  py ears.py <audio_file>
 
-Результат:
-  - Спектрограмма (картинка — "как выглядит звук")
-  - Волновая форма (картинка — амплитуда по времени)
-  - Хромаграмма (картинка — ноты по времени)
-  - Текстовый отчёт (BPM, тональность, громкость, характеристики)
+Result:
+  - Spectrogram (image — "what sound looks like")
+  - Waveform (image — amplitude over time)
+  - Chromagram (image — notes over time)
+  - Text report (BPM, key, loudness, characteristics)
 """
 
 import sys
@@ -22,23 +22,23 @@ import numpy as np
 import librosa
 import librosa.display
 import matplotlib
-matplotlib.use('Agg')  # без GUI
+matplotlib.use('Agg')  # no GUI
 import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import timedelta
 
 
-# Названия нот
+# Note names
 NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 NOTE_NAMES_RU = ['До', 'До#', 'Ре', 'Ре#', 'Ми', 'Фа', 'Фа#', 'Соль', 'Соль#', 'Ля', 'Ля#', 'Си']
 
 
 def detect_key(y, sr):
-    """Определить тональность трека"""
+    """Determine the track's key."""
     chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
     chroma_mean = chroma.mean(axis=1)
 
-    # Мажорные и минорные профили Крумхансла
+    # Krumhansl major and minor profiles
     major_profile = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
     minor_profile = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
 
@@ -68,22 +68,22 @@ def detect_key(y, sr):
 
 
 def analyze_dynamics(y, sr):
-    """Анализ динамики: тихие/громкие участки"""
+    """Analyze dynamics: quiet/loud sections."""
     rms = librosa.feature.rms(y=y)[0]
     times = librosa.times_like(rms, sr=sr)
 
-    # Нормализуем
+    # Normalize
     rms_norm = rms / (rms.max() + 1e-10)
 
-    # Находим кульминацию
+    # Find the climax
     peak_idx = np.argmax(rms)
     peak_time = times[peak_idx]
 
-    # Средняя и макс громкость в dB
+    # Average and max loudness in dB
     rms_db = librosa.amplitude_to_db(rms, ref=np.max)
     avg_db = float(np.mean(rms_db))
 
-    # Динамический диапазон
+    # Dynamic range
     dynamic_range = float(np.max(rms_db) - np.min(rms_db[rms_db > -80]))
 
     return {
@@ -97,7 +97,7 @@ def analyze_dynamics(y, sr):
 
 
 def detect_mood(tempo, key_mode, spectral_centroid_mean, dynamic_range):
-    """Определить настроение трека (приблизительно)"""
+    """Determine the track's mood (approximate)."""
     moods = []
 
     if key_mode == "minor":
@@ -126,14 +126,14 @@ def detect_mood(tempo, key_mode, spectral_centroid_mean, dynamic_range):
 
 
 def analyze_audio(audio_path, output_dir=None):
-    """Полный анализ аудиофайла"""
+    """Full audio file analysis."""
 
     audio_path = Path(audio_path)
     if not audio_path.exists():
         print(f"ОШИБКА: Файл не найден: {audio_path}")
         return None
 
-    # Папка для результатов
+    # Folder for results
     if output_dir is None:
         output_dir = audio_path.parent / f"{audio_path.stem}_analysis"
     output_dir = Path(output_dir)
@@ -142,7 +142,7 @@ def analyze_audio(audio_path, output_dir=None):
     print(f"Анализирую: {audio_path.name}")
     print(f"  Загрузка аудио...")
 
-    # Загружаем аудио
+    # Load audio
     y, sr = librosa.load(str(audio_path), sr=22050, mono=True)
     duration = librosa.get_duration(y=y, sr=sr)
     duration_str = str(timedelta(seconds=int(duration)))
@@ -150,9 +150,9 @@ def analyze_audio(audio_path, output_dir=None):
     print(f"  Длительность: {duration_str}")
     print(f"  Sample rate: {sr} Hz")
 
-    # === АНАЛИЗ ===
+    # === ANALYSIS ===
 
-    # 1. Темп (BPM)
+    # 1. Tempo (BPM)
     print(f"  Определяю темп...")
     tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
     if hasattr(tempo, '__len__'):
@@ -160,34 +160,34 @@ def analyze_audio(audio_path, output_dir=None):
     else:
         tempo = float(tempo)
 
-    # 2. Тональность
+    # 2. Key
     print(f"  Определяю тональность...")
     key, key_ru, key_mode, key_confidence = detect_key(y, sr)
 
-    # 3. Спектральные характеристики
+    # 3. Spectral characteristics
     print(f"  Анализирую спектр...")
     spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
     spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)[0]
     spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
 
-    # 4. Динамика
+    # 4. Dynamics
     print(f"  Анализирую динамику...")
     dynamics = analyze_dynamics(y, sr)
 
-    # 5. Zero crossing rate (перкуссивность)
+    # 5. Zero crossing rate (percussiveness)
     zcr = librosa.feature.zero_crossing_rate(y)[0]
 
-    # 6. Настроение
+    # 6. Mood
     mood = detect_mood(tempo, key_mode, float(np.mean(spectral_centroid)), dynamics["dynamic_range_db"])
 
-    # === ВИЗУАЛИЗАЦИЯ ===
+    # === VISUALIZATION ===
 
     print(f"  Создаю визуализации...")
 
-    # Общий стиль
+    # General style
     plt.style.use('dark_background')
 
-    # 1. Спектрограмма — "как выглядит звук"
+    # 1. Spectrogram — "what sound looks like"
     fig, ax = plt.subplots(figsize=(14, 6))
     S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
     S_dB = librosa.power_to_db(S, ref=np.max)
@@ -200,9 +200,9 @@ def analyze_audio(audio_path, output_dir=None):
     fig.savefig(str(spec_path), dpi=150, bbox_inches='tight', facecolor='#1a1a1a')
     plt.close()
 
-    # 2. Волновая форма — амплитуда по времени (даунсэмплинг для длинных треков)
+    # 2. Waveform — amplitude over time (downsampling for long tracks)
     fig, ax = plt.subplots(figsize=(14, 4))
-    max_points = 50000  # лимит точек чтобы matplotlib не упал
+    max_points = 50000  # point limit so matplotlib doesn't crash
     if len(y) > max_points:
         step = len(y) // max_points
         y_plot = y[::step]
@@ -219,7 +219,7 @@ def analyze_audio(audio_path, output_dir=None):
     fig.savefig(str(wave_path), dpi=150, bbox_inches='tight', facecolor='#1a1a1a')
     plt.close()
 
-    # 3. Хромаграмма — ноты по времени
+    # 3. Chromagram — notes over time
     fig, ax = plt.subplots(figsize=(14, 5))
     chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
     img = librosa.display.specshow(chroma, sr=sr, x_axis='time', y_axis='chroma', ax=ax, cmap='coolwarm')
@@ -231,10 +231,10 @@ def analyze_audio(audio_path, output_dir=None):
     fig.savefig(str(chroma_path), dpi=150, bbox_inches='tight', facecolor='#1a1a1a')
     plt.close()
 
-    # 4. Динамика + темп
+    # 4. Dynamics + tempo
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 6), sharex=True)
 
-    # Громкость
+    # Loudness
     ax1.plot(dynamics["rms_times"], dynamics["rms"], color='#FF6B35', linewidth=1)
     ax1.fill_between(dynamics["rms_times"], dynamics["rms"], alpha=0.3, color='#FF6B35')
     ax1.axvline(x=dynamics["peak_time"], color='red', linestyle='--', alpha=0.7, label=f'Кульминация: {dynamics["peak_time_str"]}')
@@ -242,7 +242,7 @@ def analyze_audio(audio_path, output_dir=None):
     ax1.set_ylabel('Громкость')
     ax1.legend()
 
-    # Спектральный центроид (яркость звука)
+    # Spectral centroid (sound brightness)
     frames = range(len(spectral_centroid))
     t = librosa.frames_to_time(list(frames), sr=sr)
     ax2.plot(t, spectral_centroid, color='#7B68EE', linewidth=0.8)
@@ -255,7 +255,7 @@ def analyze_audio(audio_path, output_dir=None):
     fig.savefig(str(dynamics_path), dpi=150, bbox_inches='tight', facecolor='#1a1a1a')
     plt.close()
 
-    # === ОТЧЁТ ===
+    # === REPORT ===
 
     info = {
         "file": str(audio_path),
@@ -282,12 +282,12 @@ def analyze_audio(audio_path, output_dir=None):
         }
     }
 
-    # JSON отчёт
+    # JSON report
     report_path = output_dir / "audio_report.json"
     with open(report_path, 'w', encoding='utf-8') as f:
         json.dump(info, f, ensure_ascii=False, indent=2)
 
-    # Текстовый отчёт для Claude
+    # Text report for Claude
     txt_path = output_dir / "audio_report.txt"
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(f"{'='*60}\n")
@@ -315,7 +315,7 @@ def analyze_audio(audio_path, output_dir=None):
         for name, path in info['images'].items():
             f.write(f"  {name}: {path}\n")
 
-    # Вывод в консоль
+    # Console output
     print(f"\n{'='*50}")
     print(f"  РЕЗУЛЬТАТ АНАЛИЗА")
     print(f"{'='*50}")

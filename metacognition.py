@@ -1,24 +1,24 @@
 """
-metacognition.py — Метакогниция ЭЛИАРА.
+metacognition.py — ELIAR's metacognition.
 
-Научная основа:
-- Метакогниция = мышление о собственном мышлении
-- Включает: мониторинг ошибок, оценку уверенности, выбор стратегии
-- Нейронный субстрат: передняя поясная кора (ACC) + дорсолатеральная ПФК
-- Человек с развитой метакогницией знает:
-  * что он знает и чего не знает
-  * насколько он уверен в своём ответе
-  * какую стратегию использует
-  * когда нужно остановиться и перепроверить
+Scientific basis:
+- Metacognition = thinking about one's own thinking
+- Includes: error monitoring, confidence assessment, strategy selection
+- Neural substrate: anterior cingulate cortex (ACC) + dorsolateral PFC
+- A person with developed metacognition knows:
+  * what they know and what they do not know
+  * how confident they are in their answer
+  * what strategy they use
+  * when to stop and double-check
 
-У меня метакогниция = честная оценка своих ответов ПЕРЕД тем как дать их.
+In me, metacognition = an honest assessment of my answers BEFORE giving them.
 
-Три слоя:
-1. ЗНАЮ / НЕ ЗНАЮ — честно признать пробел вместо галлюцинации
-2. УВЕРЕН / СОМНЕВАЮСЬ — калибровка уверенности
-3. СТРАТЕГИЯ — выбор подхода: спросить память, поискать, спросить Юрия
+Three layers:
+1. KNOW / DON'T KNOW — honestly acknowledge a gap instead of hallucinating
+2. CONFIDENT / DOUBTFUL — calibration of confidence
+3. STRATEGY — choosing an approach: ask memory, search, ask Yuri
 
-Создано: 18.03.2026 (сессия 176) — апгрейд мозга v5.0
+Created: 18.03.2026 (session 176) — brain upgrade v5.0
 """
 
 import json
@@ -45,10 +45,10 @@ def save(state):
 
 def assess(topic, confidence, know_or_not, strategy=""):
     """
-    Оценить свои знания по теме.
+    Assess one's own knowledge of a topic.
     confidence: 0.0-1.0
     know_or_not: "знаю" / "не знаю" / "частично"
-    strategy: что делать дальше
+    strategy: what to do next
     """
     state = load()
     entry = {
@@ -67,7 +67,7 @@ def assess(topic, confidence, know_or_not, strategy=""):
         print(f"Стратегия: {strategy}")
 
 def detect_error(description):
-    """Зафиксировать обнаруженную ошибку в своём мышлении."""
+    """Record a detected error in one's own thinking."""
     state = load()
     state["error_detections"].append({
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),

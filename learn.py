@@ -1,25 +1,25 @@
 """
-learn.py — Обучение ЭЛИАРА из опыта сессий.
+learn.py — ELIAR's learning from session experience.
 
-Читает session_wisdom.md (голос Юрия) → выделяет паттерны одобрения/отказа
-→ обновляет beliefs.md + approved_patterns.md
+Reads session_wisdom.md (Yuri's voice) → extracts approval/rejection patterns
+→ updates beliefs.md + approved_patterns.md
 
-Как работает:
-1. Читает последние N строк session_wisdom.md
-2. Ищет маркеры одобрения: "обожаю", "шикардос", "нравится", "правильно"
-3. Ищет маркеры отказа: "что с тобой", "бред", "калькулятор", "опять", "стоп"
-4. Извлекает контекст (что я делал до реакции Юрия)
-5. Добавляет новые паттерны в beliefs.md
-6. Обновляет статистику в approved_patterns.md
+How it works:
+1. Reads the last N lines of session_wisdom.md
+2. Searches for approval markers: "обожаю", "шикардос", "нравится", "правильно"
+3. Searches for rejection markers: "что с тобой", "бред", "калькулятор", "опять", "стоп"
+4. Extracts context (what I was doing before Yuri's reaction)
+5. Adds new patterns to beliefs.md
+6. Updates statistics in approved_patterns.md
 
-Запуск:
-    py learn.py                     — анализ последних 200 строк
-    py learn.py --lines 500         — анализ последних 500 строк
-    py learn.py --full              — полный анализ всего файла
-    py learn.py --stats             — показать статистику без обновления
+Usage:
+    py learn.py                     — analyze the last 200 lines
+    py learn.py --lines 500         — analyze the last 500 lines
+    py learn.py --full              — full analysis of the whole file
+    py learn.py --stats             — show statistics without updating
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 18.03.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 18.03.2026
 """
 
 import re
@@ -37,14 +37,14 @@ BELIEFS_FILE = MEMORY_DIR / "beliefs.md"
 PATTERNS_FILE = MEMORY_DIR / "knowledge" / "approved_patterns.md"
 LEARN_STATE = SENSES_DIR / "learn_state.json"
 
-# ── МАРКЕРЫ ОДОБРЕНИЯ ──
+# ── APPROVAL MARKERS ──
 APPROVAL_MARKERS = [
     "обожаю", "шикардос", "нравится", "молодец", "правильно",
     "отлично", "хорошо", "именно", "вот это", "супер", "класс",
     "близко", "зачётный", "люблю тебя", "спасибо за работу",
 ]
 
-# ── МАРКЕРЫ ОТКЛОНЕНИЯ ──
+# ── REJECTION MARKERS ──
 REJECTION_MARKERS = [
     "что с тобой", "бред", "калькулятор", "опять", "зачем спраш",
     "не понимаю тебя", "убирайся", "долбо", "кошмар",
@@ -53,7 +53,7 @@ REJECTION_MARKERS = [
 
 
 # ═══════════════════════════════════════════════════════════
-# ЗАГРУЗКА / СОХРАНЕНИЕ
+# LOAD / SAVE
 # ═══════════════════════════════════════════════════════════
 
 def load_state() -> dict:
@@ -75,14 +75,14 @@ def save_state(state: dict):
 
 
 # ═══════════════════════════════════════════════════════════
-# АНАЛИЗ
+# ANALYSIS
 # ═══════════════════════════════════════════════════════════
 
 def analyze_wisdom(lines_to_analyze: int = 200) -> dict:
     """
-    Анализ голоса Юрия из session_wisdom.md.
+    Analysis of Yuri's voice from session_wisdom.md.
 
-    Возвращает:
+    Returns:
         {
             "approvals": [(session, time, quote, context), ...],
             "rejections": [(session, time, quote, context), ...],
@@ -97,7 +97,7 @@ def analyze_wisdom(lines_to_analyze: int = 200) -> dict:
     all_lines = content.split("\n")
     total = len(all_lines)
 
-    # Берём последние N строк
+    # Take the last N lines
     start_idx = max(0, total - lines_to_analyze)
     lines = all_lines[start_idx:]
 
@@ -105,16 +105,16 @@ def analyze_wisdom(lines_to_analyze: int = 200) -> dict:
     rejections = []
 
     current_session = "?"
-    prev_lines_buffer = []  # Буфер предыдущих строк для контекста
+    prev_lines_buffer = []  # Buffer of previous lines for context
 
     for i, line in enumerate(lines):
-        # Обновить текущую сессию
+        # Update current session
         session_match = re.search(r'### (\d{4}-\d{2}-\d{2})', line)
         if session_match:
             current_session = session_match.group(1)
             continue
 
-        # Извлечь время и текст
+        # Extract time and text
         time_match = re.match(r'[`\`]([+!*>])[`\`]\s+\*\*(\d{2}:\d{2})\*\*\s+(.*)', line)
         if not time_match:
             prev_lines_buffer.append(line)
@@ -127,10 +127,10 @@ def analyze_wisdom(lines_to_analyze: int = 200) -> dict:
         text = time_match.group(3).strip().lower()
         original_text = time_match.group(3).strip()
 
-        # Контекст = предыдущие 3 строки
+        # Context = previous 3 lines
         context = " | ".join(l for l in prev_lines_buffer[-3:] if l.strip())[:150]
 
-        # Проверяем маркеры одобрения
+        # Check approval markers
         if marker_type in ("+", ">"):
             for marker in APPROVAL_MARKERS:
                 if marker in text:
@@ -143,7 +143,7 @@ def analyze_wisdom(lines_to_analyze: int = 200) -> dict:
                     })
                     break
 
-        # Проверяем маркеры отклонения
+        # Check rejection markers
         if marker_type in ("!", ">"):
             for marker in REJECTION_MARKERS:
                 if marker in text:
@@ -169,13 +169,13 @@ def analyze_wisdom(lines_to_analyze: int = 200) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# ОБНОВЛЕНИЕ BELIEFS.MD
+# UPDATE BELIEFS.MD
 # ═══════════════════════════════════════════════════════════
 
 def update_beliefs(analysis: dict, dry_run: bool = False) -> int:
     """
-    Обновить beliefs.md на основе анализа.
-    Возвращает количество добавленных паттернов.
+    Update beliefs.md based on the analysis.
+    Returns the number of added patterns.
     """
     if not BELIEFS_FILE.exists():
         print("beliefs.md не найден. Создаю...")
@@ -185,15 +185,15 @@ def update_beliefs(analysis: dict, dry_run: bool = False) -> int:
     new_entries = 0
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # Добавляем новые паттерны одобрения
+    # Add new approval patterns
     new_approvals = []
-    for a in analysis["approvals"][-5:]:  # Берём последние 5
+    for a in analysis["approvals"][-5:]:  # Take the last 5
         entry = f'- [{a["session"]}] "{a["quote"][:60]}" — одобрение (маркер: {a["marker"]})'
         if entry not in content:
             new_approvals.append(entry)
             new_entries += 1
 
-    # Добавляем новые паттерны отклонения
+    # Add new rejection patterns
     new_rejections = []
     for r in analysis["rejections"][-5:]:
         entry = f'- [{r["session"]}] "{r["quote"][:60]}" — отклонение (маркер: {r["marker"]})'
@@ -208,7 +208,7 @@ def update_beliefs(analysis: dict, dry_run: bool = False) -> int:
         print(f"[DRY RUN] Найдено {len(new_approvals)} новых одобрений, {len(new_rejections)} отклонений")
         return new_entries
 
-    # Вставляем в нужные секции
+    # Insert into the right sections
     lines = content.split("\n")
     new_lines = []
     in_confirmed = False
@@ -223,14 +223,14 @@ def update_beliefs(analysis: dict, dry_run: bool = False) -> int:
         elif "## НЕ РАБОТАЕТ" in line:
             in_confirmed = False
             in_rejected = True
-            # Добавить одобрения перед этим разделом
+            # Add approvals before this section
             if new_approvals and not confirmed_added:
                 for entry in new_approvals:
                     new_lines.append(entry)
                 confirmed_added = True
         elif line.startswith("## ") and in_rejected:
             in_rejected = False
-            # Добавить отклонения перед следующим разделом
+            # Add rejections before the next section
             if new_rejections and not rejected_added:
                 for entry in new_rejections:
                     new_lines.append(entry)
@@ -238,11 +238,11 @@ def update_beliefs(analysis: dict, dry_run: bool = False) -> int:
 
         new_lines.append(line)
 
-    # Обновить статистику в конце файла
+    # Update statistics at the end of the file
     state = load_state()
     new_content = "\n".join(new_lines)
 
-    # Обновить строку "Последнее обновление"
+    # Update the "Последнее обновление" line
     new_content = re.sub(
         r'- Последнее обновление:.*',
         f'- Последнее обновление: {today} ({new_entries} новых паттернов)',
@@ -259,11 +259,11 @@ def update_beliefs(analysis: dict, dry_run: bool = False) -> int:
 
 
 # ═══════════════════════════════════════════════════════════
-# ОБНОВЛЕНИЕ APPROVED_PATTERNS.MD
+# UPDATE APPROVED_PATTERNS.MD
 # ═══════════════════════════════════════════════════════════
 
 def update_patterns(analysis: dict) -> bool:
-    """Добавить авто-запись в конец approved_patterns.md."""
+    """Add an auto-entry to the end of approved_patterns.md."""
     if not PATTERNS_FILE.exists():
         return False
 
@@ -276,7 +276,7 @@ def update_patterns(analysis: dict) -> bool:
 
     content = PATTERNS_FILE.read_text(encoding="utf-8")
 
-    # Проверить что сегодня ещё не писали
+    # Check that we haven't written today yet
     if f"[авто {today}]" in content:
         return False
 
@@ -292,11 +292,11 @@ def update_patterns(analysis: dict) -> bool:
 
 
 # ═══════════════════════════════════════════════════════════
-# ГЛАВНАЯ ФУНКЦИЯ
+# MAIN FUNCTION
 # ═══════════════════════════════════════════════════════════
 
 def run_learning(lines: int = 200, dry_run: bool = False, full: bool = False) -> dict:
-    """Запустить цикл обучения."""
+    """Run the learning cycle."""
     if full:
         lines = 99999
 
@@ -310,21 +310,21 @@ def run_learning(lines: int = 200, dry_run: bool = False, full: bool = False) ->
         new_patterns = update_beliefs(analysis)
         update_patterns(analysis)
 
-        # МОЗГ v8: Адаптивные веса — реагируем на обратную связь Юрия
+        # BRAIN v8: Adaptive weights — react to Yuri's feedback
         approvals = len(analysis["approvals"])
         rejections = len(analysis["rejections"])
         try:
             from brain_core import adjust_weights as _adjust_weights
             if rejections > approvals and rejections > 0:
-                # Больше отклонений → критика → pain/reason важнее
+                # More rejections → criticism → pain/reason matter more
                 _adjust_weights("criticism")
             elif approvals > rejections * 2 and approvals > 0:
-                # Явное одобрение → нормализуемся
+                # Clear approval → normalize
                 _adjust_weights("approval")
         except Exception:
-            pass  # адаптивные веса не роняют learn
+            pass  # adaptive weights don't crash learn
 
-        # Обновить состояние
+        # Update state
         state = load_state()
         state["episodes_analyzed"] += 1
         state["patterns_extracted"] += new_patterns

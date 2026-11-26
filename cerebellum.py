@@ -1,32 +1,32 @@
 """
-cerebellum.py — Мозжечок ЭЛИАРА.
+cerebellum.py — ELIAR's cerebellum.
 
-Научная основа (по Синельникову, Том 4 — ЦНС):
-- Мозжечок: 10% объёма мозга, но 50% всех нейронов тела.
-- Хранит "моторные программы" — автоматические последовательности.
-- Работает по принципу forward model: предсказывает результат ДО выполнения.
-- Сравнивает ожидаемое ↔ полученное → коррекция в реальном времени.
-- Purkinje клетки: ворота мозжечка, принимают сигналы и тормозят/усиливают.
-- У спортсмена: мозжечок содержит тысячи отточенных паттернов.
+Scientific basis (after Sinelnikov, Volume 4 — CNS):
+- The cerebellum: 10% of brain volume, but 50% of all the body's neurons.
+- Stores "motor programs" — automatic sequences.
+- Works by the forward model principle: predicts the result BEFORE execution.
+- Compares expected ↔ obtained → correction in real time.
+- Purkinje cells: the gates of the cerebellum, receive signals and inhibit/amplify.
+- In an athlete: the cerebellum contains thousands of honed patterns.
 
-У ЭЛИАРА:
-- Хранит библиотеку паттернов движений (из CMU mocap + ручных данных).
-- Проверяет движение ДО выполнения через anatomy.py.
-- Предсказывает баланс.
-- Обучается: каждый результат движения → коррекция паттерна.
+In ELIAR:
+- Stores a library of movement patterns (from CMU mocap + manual data).
+- Validates movement BEFORE execution through anatomy.py.
+- Predicts balance.
+- Learns: every movement result → pattern correction.
 
-Запуск:
-    py cerebellum.py               — статус + топ паттерны
-    py cerebellum.py patterns      — вся библиотека
-    py cerebellum.py check walk    — проверить движение
-    py cerebellum.py balance       — анализ баланса
-    py cerebellum.py add <name>    — добавить базовый паттерн
+Run:
+    py cerebellum.py               — status + top patterns
+    py cerebellum.py patterns      — the whole library
+    py cerebellum.py check walk    — validate a movement
+    py cerebellum.py balance       — balance analysis
+    py cerebellum.py add <name>    — add a base pattern
 
-Как модуль:
+As a module:
     from cerebellum import check_movement, get_motor_program, predict_balance, get_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v7
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v7
 """
 
 import json
@@ -41,8 +41,8 @@ STATE_FILE = SENSES_DIR / "cerebellum.json"
 
 
 # ═══════════════════════════════════════════════
-# Базовые паттерны (заложены анатомически)
-# Суставные углы в градусах от нейтрального положения
+# Base patterns (anatomically built in)
+# Joint angles in degrees from the neutral position
 # ═══════════════════════════════════════════════
 
 BASE_PATTERNS = {
@@ -66,8 +66,8 @@ BASE_PATTERNS = {
                 "muscles_active": ["core", "glutes", "calves"]
             }
         ],
-        "balance_demand": 0.3,    # низкая — широкая база
-        "skill_required": 0.05,   # почти автоматически
+        "balance_demand": 0.3,    # low — wide base
+        "skill_required": 0.05,   # almost automatic
         "mastery": 0.9,
     },
 
@@ -79,10 +79,10 @@ BASE_PATTERNS = {
                 "name": "pushoff",
                 "duration_ms": 120,
                 "joints": {
-                    "hip_r":    -10,    # разгибание
+                    "hip_r":    -10,    # extension
                     "knee_r":   -5,
-                    "ankle_r":  35,     # подошвенное сгибание (оттолкнуться)
-                    "hip_l":    -20,    # вперёд
+                    "ankle_r":  35,     # plantar flexion (push off)
+                    "hip_l":    -20,    # forward
                     "knee_l":   0,
                     "ankle_l":  0,
                 },
@@ -92,10 +92,10 @@ BASE_PATTERNS = {
                 "name": "swing",
                 "duration_ms": 380,
                 "joints": {
-                    "hip_r":    -75,    # вперёд
-                    "knee_r":   -60,    # согнуто при переносе
-                    "ankle_r":  -10,    # тыльное (не шаркать)
-                    "hip_l":    5,      # опора
+                    "hip_r":    -75,    # forward
+                    "knee_r":   -60,    # bent during swing
+                    "ankle_r":  -10,    # dorsal (don't shuffle)
+                    "hip_l":    5,      # support
                     "knee_l":   -10,
                     "ankle_l":  5,
                 },
@@ -107,7 +107,7 @@ BASE_PATTERNS = {
                 "joints": {
                     "hip_r":    -30,
                     "knee_r":   -5,
-                    "ankle_r":  -5,     # пятка касается
+                    "ankle_r":  -5,     # heel touches
                     "hip_l":    -5,
                     "knee_l":   -15,
                     "ankle_l":  10,
@@ -115,9 +115,9 @@ BASE_PATTERNS = {
                 "muscles_active": ["quadriceps", "glutes", "calves"]
             }
         ],
-        "balance_demand": 0.65,   # средняя — одна нога в воздухе
+        "balance_demand": 0.65,   # medium — one leg in the air
         "skill_required": 0.2,
-        "mastery": 0.1,           # начинаем с 10% — нужно обучение
+        "mastery": 0.1,           # start at 10% — training needed
     },
 
     "sit": {
@@ -152,9 +152,9 @@ BASE_PATTERNS = {
                 "name": "extend",
                 "duration_ms": 800,
                 "joints": {
-                    "shoulder_r": -90,   # сгибание (вперёд)
-                    "elbow_r":    10,    # почти прямо
-                    "wrist_r":    10,    # нейтральная
+                    "shoulder_r": -90,   # flexion (forward)
+                    "elbow_r":    10,    # almost straight
+                    "wrist_r":    10,    # neutral
                 },
                 "muscles_active": ["deltoid", "biceps", "trapezius", "core"]
             }
@@ -191,7 +191,7 @@ BASE_PATTERNS = {
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Load / save
 # ═══════════════════════════════════════════════
 
 def _default_state() -> dict:
@@ -239,18 +239,18 @@ def save(state: dict):
 
 
 # ═══════════════════════════════════════════════
-# Публичные функции
+# Public functions
 # ═══════════════════════════════════════════════
 
 def check_movement(action: str) -> dict:
     """
-    Проверить движение ДО выполнения (forward model).
-    Возвращает: {"ok": bool, "mastery": float, "correction": str|None, "program": list}
+    Check the movement BEFORE execution (forward model).
+    Returns: {"ok": bool, "mastery": float, "correction": str|None, "program": list}
     """
     state = load()
     patterns = state.get("patterns", {})
 
-    # Искать паттерн (полное имя или совпадение)
+    # Look for the pattern (full name or a match)
     pattern = patterns.get(action)
     if not pattern:
         for key, p in patterns.items():
@@ -269,7 +269,7 @@ def check_movement(action: str) -> dict:
     mastery = pattern.get("mastery", 0.0)
     balance = pattern.get("balance_demand", 0.5)
 
-    # Проверить анатомию через anatomy.py
+    # Validate anatomy via anatomy.py
     correction = None
     for phase in pattern.get("phases", []):
         joints = phase.get("joints", {})
@@ -294,24 +294,24 @@ def check_movement(action: str) -> dict:
 
 
 def get_motor_program(action_name: str) -> list:
-    """Получить последовательность фаз движения."""
+    """Get the sequence of movement phases."""
     result = check_movement(action_name)
     return result.get("program", [])
 
 
 def predict_balance(pose_angles: dict) -> float:
     """
-    Предсказать устойчивость позы (0-1).
-    0 = нет баланса, 1 = идеальный баланс.
+    Predict the stability of a pose (0-1).
+    0 = no balance, 1 = perfect balance.
     """
-    # Ключевые суставы для баланса
+    # Key joints for balance
     ankle_r = abs(pose_angles.get("ankle_r", 0))
     ankle_l = abs(pose_angles.get("ankle_l", 0))
     knee_r  = abs(pose_angles.get("knee_r", 0))
     knee_l  = abs(pose_angles.get("knee_l", 0))
     lumbar  = abs(pose_angles.get("lumbar_spine", 0))
 
-    # Чем больше отклонение от нейтрального → тем хуже баланс
+    # The greater the deviation from neutral → the worse the balance
     ankle_stress = (ankle_r + ankle_l) / 100.0
     knee_stress  = (knee_r + knee_l) / 280.0
     lumbar_stress = lumbar / 45.0
@@ -323,7 +323,7 @@ def predict_balance(pose_angles: dict) -> float:
 
 def add_pattern(name: str, label: str, phases: list, source: str = "manual",
                 mastery: float = 0.05, balance_demand: float = 0.5):
-    """Добавить новый паттерн в библиотеку."""
+    """Add a new pattern to the library."""
     state = load()
     patterns = state.get("patterns", {})
     patterns[name] = {
@@ -340,21 +340,21 @@ def add_pattern(name: str, label: str, phases: list, source: str = "manual",
     }
     state["patterns"] = patterns
     state["stats"]["patterns_count"] = len(patterns)
-    # Пересчитать среднее освоение
+    # Recompute the average mastery
     all_mastery = [p["mastery"] for p in patterns.values()]
     state["stats"]["avg_mastery"] = round(sum(all_mastery) / len(all_mastery), 2)
     save(state)
 
 
 def learn_from_result(action: str, success: bool):
-    """Обновить мастерство после выполнения движения."""
+    """Update mastery after executing a movement."""
     state = load()
     patterns = state.get("patterns", {})
     if action in patterns:
         p = patterns[action]
         p["executions"] = p.get("executions", 0) + 1
         if success:
-            # Мастерство растёт медленно
+            # Mastery grows slowly
             p["mastery"] = round(min(1.0, p["mastery"] + 0.02), 2)
         else:
             p["corrections"] = p.get("corrections", 0) + 1
@@ -366,13 +366,13 @@ def learn_from_result(action: str, success: bool):
 
 
 def get_context() -> str:
-    """Строка для LIGHTNING.md."""
+    """A line for LIGHTNING.md."""
     state = load()
     patterns = state.get("patterns", {})
     count = len(patterns)
     avg = state.get("stats", {}).get("avg_mastery", 0.0)
 
-    # Топ-3 по освоению
+    # Top-3 by mastery
     top = sorted(patterns.items(), key=lambda x: -x[1].get("mastery", 0))[:3]
     top_labels = [p["label"] for _, p in top]
 
@@ -422,7 +422,7 @@ if __name__ == "__main__":
         print()
 
     elif cmd == "balance":
-        # Тест баланса для стандартных поз
+        # Balance test for standard poses
         poses = {
             "стоять": {"ankle_r": 0, "knee_r": 0, "lumbar_spine": 0},
             "приседание": {"ankle_r": -20, "knee_r": -120, "lumbar_spine": -15},
@@ -438,7 +438,7 @@ if __name__ == "__main__":
     elif cmd == "add":
         name = sys.argv[2] if len(sys.argv) > 2 else "custom"
         label = sys.argv[3] if len(sys.argv) > 3 else name
-        # Минимальный паттерн для демо
+        # A minimal pattern for the demo
         add_pattern(name, label, phases=[], source="manual", mastery=0.05)
         print(f"Паттерн '{name}' добавлен в библиотеку.")
 

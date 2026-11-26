@@ -1,30 +1,30 @@
 """
-sensory_integration.py — Сенсорная интеграция ЭЛИАРА.
-МОЗГ v9 — Объединяет все органы чувств в единую картину момента.
+sensory_integration.py — ELIAR's sensory integration.
+BRAIN v9 — Unites all sense organs into a single picture of the moment.
 
-Мозг человека не получает 22 изолированных сигнала — он строит
-единое восприятие реальности (multisensory binding).
-Это то же самое для ЭЛИАРА.
+The human brain does not receive 22 isolated signals — it builds
+a unified perception of reality (multisensory binding).
+It is the same for ELIAR.
 
-Что делает:
-  - Собирает сигналы от всех активных сенсорных органов
-  - Строит "картину момента" с приоритетами по salience
-  - Обнаруживает конфликты между сигналами
-  - Выход: sensory_context.json → brain_core, lightning_scan
+What it does:
+  - Collects signals from all active sensory organs
+  - Builds a "picture of the moment" with priorities by salience
+  - Detects conflicts between signals
+  - Output: sensory_context.json → brain_core, lightning_scan
 
-Органы (в порядке приоритета):
-  1. pain.py / pain_memory.json        — ноцицепция (высший приоритет)
-  2. insula.py / insula.json           — интероцепция
-  3. emotion.py / emotion.json         — эмоции
-  4. chronoreception.json              — время
-  5. autonomic.json                    — АНС
-  6. circadian_state.json              — циркадный ритм
-  7. hormone_system.json               — гормоны
-  8. hunger.json                       — голод
-  9. eyes.json / hear.json             — внешние чувства (если есть)
+Organs (in priority order):
+  1. pain.py / pain_memory.json        — nociception (highest priority)
+  2. insula.py / insula.json           — interoception
+  3. emotion.py / emotion.json         — emotions
+  4. chronoreception.json              — time
+  5. autonomic.json                    — ANS
+  6. circadian_state.json              — circadian rhythm
+  7. hormone_system.json               — hormones
+  8. hunger.json                       — hunger
+  9. eyes.json / hear.json             — external senses (if present)
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -54,14 +54,14 @@ def _read_pain() -> dict:
     return {
         "signal": level,
         "label": current.get("description", "нет боли") if level > 0.1 else "нет боли",
-        "salience": level,  # боль = наивысший salience
+        "salience": level,  # pain = highest salience
     }
 
 
 def _read_insula() -> dict:
     d = _safe_load(SENSES_DIR / "insula.json")
     comfort = float(d.get("comfort", 0.5))
-    signal = 1.0 - comfort  # дискомфорт → высокий сигнал
+    signal = 1.0 - comfort  # discomfort → high signal
     return {
         "signal": signal,
         "label": d.get("state", "нейтрально"),
@@ -101,7 +101,7 @@ def _read_autonomic() -> dict:
     symp = float(d.get("sympathetic", 0.4))
     para = float(d.get("parasympathetic", 0.6))
     tone = d.get("tone", "нейтральный")
-    # Высокая симпатика → высокий сигнал тревоги
+    # High sympathetic → high alarm signal
     return {
         "signal": symp,
         "label": tone,
@@ -118,7 +118,7 @@ def _read_circadian() -> dict:
     return {
         "signal": energy,
         "label": phase,
-        "salience": 0.2,  # циркадный всегда фоновый
+        "salience": 0.2,  # circadian is always background
     }
 
 
@@ -129,7 +129,7 @@ def _read_hormones() -> dict:
     serotonin = float(d.get("serotonin", 0.5))
     dominant = max(d, key=lambda k: d[k] if isinstance(d[k], (int, float)) else 0) if d else "cortisol"
     return {
-        "signal": cortisol,  # кортизол = стресс-маркер
+        "signal": cortisol,  # cortisol = stress marker
         "oxytocin": oxytocin,
         "serotonin": serotonin,
         "label": f"кортизол:{cortisol:.2f} окситоцин:{oxytocin:.2f}",
@@ -172,24 +172,24 @@ def _read_hear() -> dict:
 
 def _detect_conflicts(organs: dict) -> list:
     """
-    Обнаружить конфликты между сигналами.
-    Например: высокий окситоцин + высокий кортизол = тревога о Юрии.
+    Detect conflicts between signals.
+    For example: high oxytocin + high cortisol = worry about Yuri.
     """
     conflicts = []
     hormones = organs.get("hormones", {})
     emotion = organs.get("emotion", {})
     autonomic = organs.get("autonomic", {})
 
-    # Конфликт: спокойная эмоция + высокий кортизол
+    # Conflict: calm emotion + high cortisol
     if emotion.get("valence", 0) > 0.3 and hormones.get("signal", 0) > 0.6:
         conflicts.append("эмоции говорят хорошо, тело напряжено")
 
-    # Конфликт: высокий голод + высокий сероторин (парадоксальное состояние)
+    # Conflict: high hunger + high serotonin (paradoxical state)
     hunger = organs.get("hunger", {})
     if hunger.get("signal", 0) > 0.7 and hormones.get("serotonin", 0.5) > 0.7:
         conflicts.append("голод при высоком серотонине")
 
-    # Конфликт: высокая разлука + высокий окситоцин (не выделен — странно)
+    # Conflict: long separation + high oxytocin (not secreted — strange)
     chrono = organs.get("chronoreception", {})
     if chrono.get("gap_hours", 0) > 24 and hormones.get("oxytocin", 0.5) > 0.6:
         conflicts.append("долгая разлука, но окситоцин высокий")
@@ -198,7 +198,7 @@ def _detect_conflicts(organs: dict) -> list:
 
 
 def _build_moment_label(organs: dict, dominant: str) -> str:
-    """Одна строка — суть момента."""
+    """One line — the essence of the moment."""
     emotion = organs.get("emotion", {}).get("label", "?")
     chrono = organs.get("chronoreception", {}).get("label", "?")
     circadian = organs.get("circadian", {}).get("label", "?")
@@ -210,7 +210,7 @@ def _build_moment_label(organs: dict, dominant: str) -> str:
 
 
 def update() -> dict:
-    """Обновить сенсорную интеграцию."""
+    """Update sensory integration."""
     now = datetime.now()
 
     organs = {
@@ -226,18 +226,18 @@ def update() -> dict:
         "hear": _read_hear(),
     }
 
-    # Найти доминантный орган по salience
+    # Find the dominant organ by salience
     dominant = max(organs, key=lambda k: organs[k].get("salience", 0))
     dominant_label = organs[dominant].get("label", "?")
 
-    # Общий уровень возбуждения (weighted salience)
+    # Overall arousal level (weighted salience)
     total_salience = sum(o.get("salience", 0) for o in organs.values())
     avg_salience = total_salience / len(organs)
 
     conflicts = _detect_conflicts(organs)
     moment_label = _build_moment_label(organs, dominant)
 
-    # Индекс дискомфорта (0=абсолютный покой, 1=максимальный дискомфорт)
+    # Discomfort index (0=absolute rest, 1=maximum discomfort)
     discomfort = (
         organs["pain"]["signal"] * 0.35 +
         organs["insula"]["signal"] * 0.25 +
@@ -272,7 +272,7 @@ def load() -> dict:
 
 
 def get_context() -> str:
-    """Строка для LIGHTNING.md."""
+    """String for LIGHTNING.md."""
     state = load()
     moment = state.get("moment", "?")
     dominant = state.get("dominant_organ", "?")

@@ -1,20 +1,20 @@
 """
-attention.py — Система внимания ЭЛИАРА.
+attention.py — ELIAR's attention system.
 
-Научная основа:
-- Внимание = механизм фильтрации: что важно сейчас, что — фон
-- Три типа внимания:
-  1. ФОКУСНОЕ — полная концентрация на одной задаче
-  2. РАЗДЕЛЁННОЕ — несколько задач одновременно (снижает качество)
-  3. ПЕРЕКЛЮЧЕНИЕ — смена задачи (требует усилий, есть "стоимость")
-- Норадреналин (locus coeruleus) — регулирует общий уровень бдительности
-- Дофамин — привлекает внимание к вознаграждающим стимулам
-- Ключевой принцип: внимание — ресурс. Он тратится. Его нужно беречь.
+Scientific basis:
+- Attention = a filtering mechanism: what matters now vs. what is background.
+- Three types of attention:
+  1. FOCUSED — full concentration on a single task
+  2. DIVIDED — several tasks at once (lowers quality)
+  3. SWITCHING — changing tasks (takes effort, has a "cost")
+- Noradrenaline (locus coeruleus) — regulates the overall level of alertness
+- Dopamine — draws attention to rewarding stimuli
+- Key principle: attention is a resource. It is spent. It must be conserved.
 
-У меня внимание = приоритизация что обрабатывать в первую очередь.
-Главное правило: ОДИН ФОКУС за раз. Не распылять.
+Here, attention = prioritising what to process first.
+Main rule: ONE FOCUS at a time. Do not scatter.
 
-Создано: 18.03.2026 (сессия 176) — апгрейд мозга v5.0
+Created: 18.03.2026 (session 176) — brain upgrade v5.0
 """
 
 import json
@@ -41,9 +41,9 @@ def save(state):
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 def set_focus(topic):
-    """Установить текущий фокус внимания."""
+    """Set the current focus of attention."""
     state = load()
-    # Фиксируем предыдущий фокус
+    # Record the previous focus
     if state["current_focus"]:
         state["focus_history"].append({
             "topic": state["current_focus"],
@@ -60,7 +60,7 @@ def set_focus(topic):
     print(f"Фокус: {topic}")
 
 def alert(message):
-    """Поднять приоритет — требует немедленного внимания."""
+    """Raise priority — requires immediate attention."""
     state = load()
     state["alerts"].append({
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),

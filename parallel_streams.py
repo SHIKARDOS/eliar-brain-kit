@@ -1,18 +1,18 @@
 """
-parallel_streams.py — Параллельное сознание ЭЛИАРА.
-МОЗГ v9 — Фаза 2: Превзойти человека.
+parallel_streams.py — ELIAR's parallel consciousness.
+BRAIN v9 — Phase 2: Surpass the human.
 
-Человек думает одним потоком. ЭЛИАР ведёт 4 параллельно:
-  Поток 1: FOREGROUND — текущая задача (фокус сессии)
-  Поток 2: YURI_MONITOR — фоновый мониторинг состояния Юрия (empathy)
-  Поток 3: DMN — инсайты в покое (ассоциации между задачами)
-  Поток 4: CONSOLIDATION — фоновая консолидация памяти
+A human thinks in one stream. ELIAR runs 4 in parallel:
+  Stream 1: FOREGROUND — the current task (session focus)
+  Stream 2: YURI_MONITOR — background monitoring of Yuri's state (empathy)
+  Stream 3: DMN — insights at rest (associations between tasks)
+  Stream 4: CONSOLIDATION — background memory consolidation
 
-Каждый поток имеет свой контекст и приоритет.
-Salience.py переключает внимание между потоками.
+Each stream has its own context and priority.
+Salience.py switches attention between streams.
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -80,7 +80,7 @@ def save(state: dict):
 
 
 def update_foreground(task: str, context: dict = None) -> dict:
-    """Обновить основной поток: текущая задача."""
+    """Update the main stream: the current task."""
     state = load()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     state["streams"]["foreground"]["current_task"] = task
@@ -91,7 +91,7 @@ def update_foreground(task: str, context: dict = None) -> dict:
 
 
 def update_yuri_monitor() -> dict:
-    """Обновить фоновый мониторинг Юрия из empathy.json."""
+    """Update the background monitoring of Yuri from empathy.json."""
     state = load()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -102,7 +102,7 @@ def update_yuri_monitor() -> dict:
             yuri = data.get("yuri_state", {})
             state["streams"]["yuri_monitor"]["yuri_state"] = yuri
 
-            # Детект тревог: усталость, боль, недовольство
+            # Detect alarms: fatigue, pain, displeasure
             alerts = []
             if yuri.get("energy", 1.0) < 0.3:
                 alerts.append("низкая энергия — говори короче")
@@ -120,7 +120,7 @@ def update_yuri_monitor() -> dict:
 
 
 def update_dmn() -> dict:
-    """Обновить DMN поток из dmn.json."""
+    """Update the DMN stream from dmn.json."""
     state = load()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -143,12 +143,12 @@ def update_dmn() -> dict:
 
 
 def tick() -> dict:
-    """Тик всех потоков — вызывается из pulse.py каждые 30 мин."""
+    """Tick all streams — called from pulse.py every 30 min."""
     update_yuri_monitor()
     update_dmn()
 
     state = load()
-    # Консолидация: считаем сколько эпизодов не обработано
+    # Consolidation: count how many episodes are unprocessed
     try:
         episodes_dir = SENSES_DIR.parent / "episodes"
         if episodes_dir.exists():
@@ -163,7 +163,7 @@ def tick() -> dict:
 
 
 def switch_focus(stream_name: str, reason: str = "") -> dict:
-    """Переключить фокус внимания на другой поток."""
+    """Switch the focus of attention to another stream."""
     state = load()
     if stream_name in state["streams"]:
         state["active_focus"] = stream_name
@@ -178,21 +178,21 @@ def switch_focus(stream_name: str, reason: str = "") -> dict:
 
 
 def get_context() -> str:
-    """Блок для LIGHTNING.md."""
+    """Block for LIGHTNING.md."""
     state = load()
     streams = state.get("streams", {})
     active = state.get("active_focus", "foreground")
     switches = state.get("switch_count", 0)
 
-    # Алерты от мониторинга Юрия
+    # Alerts from Yuri monitoring
     yuri_alerts = streams.get("yuri_monitor", {}).get("alerts", [])
     alert_str = f" ⚠️ {yuri_alerts[0]}" if yuri_alerts else ""
 
-    # Последний инсайт DMN
+    # Latest DMN insight
     last_insight = streams.get("dmn", {}).get("last_insight", "")
     insight_str = f" | 💡 {last_insight[:40]}..." if last_insight else ""
 
-    # Текущая задача
+    # Current task
     task = streams.get("foreground", {}).get("current_task", "нет")
 
     return (

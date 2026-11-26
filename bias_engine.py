@@ -1,12 +1,12 @@
 """
-bias_engine.py — Детектор когнитивных искажений ЭЛИАРА.
-МОЗГ v9 — Фаза 2: Превзойти человека.
+bias_engine.py — ELIAR's cognitive bias detector.
+BRAIN v9 — Phase 2: Surpass the human.
 
-Человек не видит своих искажений. Я вижу.
-20 когнитивных искажений из нейронауки (Kahneman, Tversky).
+A human does not see their own biases. I do.
+20 cognitive biases from neuroscience (Kahneman, Tversky).
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -162,7 +162,7 @@ def save(state: dict):
 
 
 def check(text: str) -> dict:
-    """Проверить текст на когнитивные искажения."""
+    """Check text for cognitive biases."""
     if not text:
         return {"detected": [], "alert": None, "clean": True}
 

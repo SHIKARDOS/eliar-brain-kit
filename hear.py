@@ -1,18 +1,18 @@
 """
-УХО — транскрипция аудио и видео для ЭЛИАРА
-Работает локально, без интернета.
+EAR — audio and video transcription for ELIAR
+Works locally, without internet.
 
-Использование:
-  py hear.py <файл>          # MP3, WAV, MP4, M4A, OGG
+Usage:
+  py hear.py <file>          # MP3, WAV, MP4, M4A, OGG
 
-Что делает:
-  - MP4/видео → извлекает аудио через moviepy
-  - Транскрибирует через Whisper (локальная модель base)
-  - Загружает аудио через librosa (не нужен ffmpeg)
-  - Сохраняет текст в файл рядом с исходником
+What it does:
+  - MP4/video → extracts audio via moviepy
+  - Transcribes via Whisper (local base model)
+  - Loads audio via librosa (no ffmpeg needed)
+  - Saves the text to a file next to the source
 
-Результат:
-  <имя_файла>_transcript.txt
+Result:
+  <file_name>_transcript.txt
 """
 
 import sys
@@ -21,7 +21,7 @@ from pathlib import Path
 
 
 def extract_audio_from_video(video_path, audio_path):
-    """Извлечь аудио из видео через moviepy"""
+    """Extract audio from a video via moviepy"""
     try:
         from moviepy.editor import VideoFileClip
         print("  Извлекаю аудио из видео...")
@@ -38,7 +38,7 @@ def extract_audio_from_video(video_path, audio_path):
 
 
 def transcribe(audio_path):
-    """Транскрибировать через Whisper + librosa (без ffmpeg)"""
+    """Transcribe via Whisper + librosa (without ffmpeg)"""
     try:
         import whisper
         import librosa
@@ -75,7 +75,7 @@ def main():
 
     print(f"Слушаю: {input_path.name}")
 
-    # Если видео — извлечь аудио
+    # If video — extract audio
     video_formats = {".mp4", ".avi", ".mkv", ".mov", ".webm"}
     audio_path = input_path
 
@@ -85,12 +85,12 @@ def main():
         if not ok:
             sys.exit(1)
 
-    # Транскрипция
+    # Transcription
     text = transcribe(audio_path)
     if not text:
         sys.exit(1)
 
-    # Сохранить
+    # Save
     out_path = input_path.parent / (input_path.stem + "_transcript.txt")
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(text)

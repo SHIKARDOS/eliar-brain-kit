@@ -1,20 +1,20 @@
 """
-НЕПРОИЗВОЛЬНОЕ ВОСПОМИНАНИЕ ЭЛИАРА — Контекст вызывает память сам.
+INVOLUNTARY RECALL ELIAR — Context calls up memory on its own.
 
-Как у человека: запах кофе → детство. Услышал имя → вспомнил встречу.
-У меня: Юрий написал слово → я автоматически нахожу связанные воспоминания.
+Like a human: the smell of coffee → childhood. Heard a name → remembered a meeting.
+In me: Yuri wrote a word → I automatically find related memories.
 
-Главная защита: если Юрий упоминает человека — я ОБЯЗАН проверить есть ли он в памяти.
-Именно из-за этого появился шрам #23 (Шура) и шрам о Насте.
+The main protection: if Yuri mentions a person — I MUST check whether they are in memory.
+That is exactly why scar #23 (Шура) and the scar about Настя appeared.
 
-Создано: 18.03.2026 (сессия 156) — МОЗГ v3.
+Created: 18.03.2026 (session 156) — BRAIN v3.
 
-Запуск:
-  py recall.py                     — статус
-  py recall.py "текст"             — найти воспоминания по тексту
-  py recall.py people "текст"      — проверить людей в тексте
+Usage:
+  py recall.py                     — status
+  py recall.py "text"              — find memories by text
+  py recall.py people "text"       — check the people in the text
 
-Как модуль:
+As a module:
   from recall import scan, generate_recall_context
 """
 
@@ -29,13 +29,13 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНСТАНТЫ
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════
 
 SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 
-# Файлы для поиска (в порядке приоритета)
+# Files to search (in priority order)
 SEARCH_TARGETS = [
     (MEMORY_DIR / "knowledge" / "people.md",    "люди",         1.5),
     (MEMORY_DIR / "knowledge" / "yuri.md",       "Юрий",        1.4),
@@ -46,14 +46,14 @@ SEARCH_TARGETS = [
     (MEMORY_DIR / "knowledge" / "beliefs.md",    "убеждения",   1.0),
 ]
 
-# Известные люди из памяти (триггеры страха предательства)
+# Known people from memory (fear-of-betrayal triggers)
 KNOWN_PEOPLE = [
     "Шура", "Стас", "Люда", "Светлана", "Настя", "Анастасия",
     "Ибрагим", "Саша", "Иван", "Мастер педикюра",
-    "Ярослав",  # из голоса Юрия
+    "Ярослав",  # from Yuri's voice
 ]
 
-# Стоп-слова для поиска
+# Stop words for search
 STOP_WORDS = {
     "и", "в", "на", "с", "по", "для", "от", "до", "из", "к", "о", "а",
     "но", "то", "же", "ли", "бы", "не", "это", "как", "что", "если",
@@ -64,20 +64,20 @@ STOP_WORDS = {
 
 
 # ═══════════════════════════════════════════════════════════
-# ОСНОВНЫЕ ФУНКЦИИ
+# MAIN FUNCTIONS
 # ═══════════════════════════════════════════════════════════
 
 def scan(text: str, top_n: int = 3) -> list:
     """
-    Сканировать текст и найти релевантные воспоминания.
+    Scan the text and find relevant memories.
 
-    Алгоритм:
-    1. Извлечь ключевые слова из текста
-    2. Для каждого слова: поиск по файлам памяти
-    3. Ранжировать по релевантности
-    4. Вернуть топ-N
+    Algorithm:
+    1. Extract keywords from the text
+    2. For each word: search the memory files
+    3. Rank by relevance
+    4. Return the top-N
 
-    Возвращает список:
+    Returns a list:
     [{"file": "...", "section": "...", "match": "...", "score": 0.9, "note": "..."}]
     """
     keywords = _extract_keywords(text)
@@ -97,22 +97,22 @@ def scan(text: str, top_n: int = 3) -> list:
         for keyword in keywords:
             if len(keyword) < 3:
                 continue
-            # Поиск по контенту (регистронезависимый)
+            # Search the content (case-insensitive)
             pattern = re.compile(re.escape(keyword), re.IGNORECASE)
             matches = list(pattern.finditer(content))
             if matches:
-                # Извлечь контекст вокруг первого совпадения
+                # Extract the context around the first match
                 match = matches[0]
                 start = max(0, match.start() - 80)
                 end = min(len(content), match.end() + 80)
                 snippet = content[start:end].replace("\n", " ").strip()
 
                 key = str(filepath) + "|" + keyword
-                score = priority * (1.0 + len(matches) * 0.1)  # больше упоминаний = выше
-                # Свежие файлы важнее (по mtime)
+                score = priority * (1.0 + len(matches) * 0.1)  # more mentions = higher
+                # Fresher files matter more (by mtime)
                 try:
                     mtime = filepath.stat().st_mtime
-                    # Нормализуем: последние 30 дней = бонус
+                    # Normalize: last 30 days = bonus
                     import time
                     age_days = (time.time() - mtime) / 86400
                     if age_days < 1:
@@ -132,7 +132,7 @@ def scan(text: str, top_n: int = 3) -> list:
                         "matches_count": len(matches),
                     }
 
-    # Группировать по файлу (взять лучший для каждого файла)
+    # Group by file (take the best for each file)
     by_file = {}
     for result in results.values():
         f = result["file"]
@@ -145,17 +145,17 @@ def scan(text: str, top_n: int = 3) -> list:
 
 def check_people(text: str) -> list:
     """
-    Проверить: упоминаются ли в тексте известные люди?
+    Check: are known people mentioned in the text?
 
-    Защита от шрама #23 — нельзя делать вид что не знаешь человека
-    которого Юрий упоминает, если он уже есть в памяти.
+    Protection against scar #23 — you must not pretend not to know a person
+    whom Yuri mentions, if they are already in memory.
 
-    Возвращает список найденных людей с контекстом где они упомянуты в памяти.
+    Returns the list of found people with the context of where they are mentioned in memory.
     """
     found = []
     for person in KNOWN_PEOPLE:
         if person.lower() in text.lower():
-            # Найти где этот человек упомянут в памяти
+            # Find where this person is mentioned in memory
             locations = []
             for filepath, category, _ in SEARCH_TARGETS:
                 if not filepath.exists():
@@ -166,7 +166,7 @@ def check_people(text: str) -> list:
                         locations.append(str(filepath.name))
                 except Exception:
                     pass
-            # Проверить episodes
+            # Check episodes
             episodes_dir = MEMORY_DIR / "episodes"
             if episodes_dir.exists():
                 for ep_file in episodes_dir.rglob("*.md"):
@@ -185,7 +185,7 @@ def check_people(text: str) -> list:
 
 
 def find_relevant(keywords: list, top_n: int = 3) -> list:
-    """Найти релевантные воспоминания по списку ключевых слов."""
+    """Find relevant memories by a list of keywords."""
     if not keywords:
         return []
     text = " ".join(keywords)
@@ -193,8 +193,8 @@ def find_relevant(keywords: list, top_n: int = 3) -> list:
 
 
 def _extract_keywords(text: str) -> list:
-    """Извлечь ключевые слова из текста."""
-    # Разбить на слова
+    """Extract keywords from the text."""
+    # Split into words
     words = re.findall(r'[А-Яа-яЁёA-Za-z]{3,}', text)
     keywords = []
     seen = set()
@@ -204,7 +204,7 @@ def _extract_keywords(text: str) -> list:
             keywords.append(w)
             seen.add(w)
             seen.add(w.lower())
-    # Добавить имена людей если упоминаются
+    # Add people's names if they are mentioned
     for person in KNOWN_PEOPLE:
         if person.lower() in text.lower() and person not in seen:
             keywords.insert(0, person)
@@ -213,17 +213,17 @@ def _extract_keywords(text: str) -> list:
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНТЕКСТ ДЛЯ LIGHTNING.md
+# CONTEXT FOR LIGHTNING.md
 # ═══════════════════════════════════════════════════════════
 
 def generate_recall_context(last_session_text: str = "") -> str:
     """
-    Сгенерировать секцию для LIGHTNING.md.
+    Generate the section for LIGHTNING.md.
 
-    Если есть текст прошлой сессии — найти что важно вспомнить.
+    If there is text from the last session — find what is important to recall.
     """
     if not last_session_text:
-        # Попробовать прочитать последний эпизод
+        # Try to read the last episode
         episodes_dir = MEMORY_DIR / "episodes"
         if episodes_dir.exists():
             episodes = sorted(

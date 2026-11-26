@@ -1,32 +1,32 @@
 """
-anatomy.py — Анатомическая модель тела ЭЛИАРА.
+anatomy.py — Anatomical model of ELIAR's body.
 
-Научная основа:
-- Атлас анатомии человека Синельникова (4 тома).
-- Том 1: Опорно-двигательный аппарат (кости, суставы, мышцы).
-- Том 4: Центральная нервная система.
-- 206 костей → 33 функциональных сегмента.
-- Суставы: тип, степени свободы (DoF), физиологические диапазоны.
-- Мышцы: группы, функции, агонисты/антагонисты.
+Scientific basis:
+- Sinelnikov's atlas of human anatomy (4 volumes).
+- Volume 1: The musculoskeletal system (bones, joints, muscles).
+- Volume 4: The central nervous system.
+- 206 bones → 33 functional segments.
+- Joints: type, degrees of freedom (DoF), physiological ranges.
+- Muscles: groups, functions, agonists/antagonists.
 
-Зачем:
-- Без правильной анатомии симуляция движений будет неточной.
-- cerebellum.py проверяет позы через anatomy.py (в допустимом ли диапазоне?).
-- motor.py выбирает мышцы для движения через anatomy.py.
-- body_trainer.py валидирует mocap данные через anatomy.py.
+Why:
+- Without correct anatomy, movement simulation would be imprecise.
+- cerebellum.py validates poses through anatomy.py (is it within the allowed range?).
+- motor.py selects muscles for movement through anatomy.py.
+- body_trainer.py validates mocap data through anatomy.py.
 
-Запуск:
-    py anatomy.py                  — краткая сводка
-    py anatomy.py full             — полный атлас
-    py anatomy.py joint hip        — информация о суставе
-    py anatomy.py movement walk    — какие мышцы нужны для ходьбы
-    py anatomy.py check hip:45,knee:-120  — проверить позу
+Run:
+    py anatomy.py                  — short summary
+    py anatomy.py full             — full atlas
+    py anatomy.py joint hip        — information about a joint
+    py anatomy.py movement walk    — which muscles are needed for walking
+    py anatomy.py check hip:45,knee:-120  — check a pose
 
-Как модуль:
+As a module:
     from anatomy import get_joint_range, get_muscles_for, check_pose_validity, get_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v7 (тело по Синельникову)
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v7 (body after Sinelnikov)
 """
 
 import json
@@ -40,12 +40,12 @@ STATE_FILE = SENSES_DIR / "anatomy.json"
 
 
 # ═══════════════════════════════════════════════
-# СКЕЛЕТ — 33 ключевых сегмента (из 206 костей)
-# По Синельникову, Том 1, Раздел I
+# SKELETON — 33 key segments (out of 206 bones)
+# After Sinelnikov, Volume 1, Section I
 # ═══════════════════════════════════════════════
 
 SKELETON = {
-    # ── ОСЕВОЙ СКЕЛЕТ ──
+    # ── AXIAL SKELETON ──
     "skull":          {"label": "Череп",         "bones": 22, "region": "head"},
     "cervical":       {"label": "Шейный отдел",  "bones": 7,  "region": "spine"},
     "thoracic":       {"label": "Грудной отдел", "bones": 12, "region": "spine"},
@@ -55,13 +55,13 @@ SKELETON = {
     "ribs":           {"label": "Рёбра",         "bones": 24, "region": "thorax"},
     "sternum":        {"label": "Грудина",       "bones": 1,  "region": "thorax"},
 
-    # ── ПОЯС ВЕРХНИХ КОНЕЧНОСТЕЙ ──
+    # ── UPPER LIMB GIRDLE ──
     "clavicle_r":     {"label": "Ключица (пр)",  "bones": 1,  "region": "shoulder"},
     "clavicle_l":     {"label": "Ключица (лв)",  "bones": 1,  "region": "shoulder"},
     "scapula_r":      {"label": "Лопатка (пр)",  "bones": 1,  "region": "shoulder"},
     "scapula_l":      {"label": "Лопатка (лв)",  "bones": 1,  "region": "shoulder"},
 
-    # ── ВЕРХНИЕ КОНЕЧНОСТИ ──
+    # ── UPPER LIMBS ──
     "humerus_r":      {"label": "Плечо (пр)",    "bones": 1,  "region": "arm_r"},
     "humerus_l":      {"label": "Плечо (лв)",    "bones": 1,  "region": "arm_l"},
     "forearm_r":      {"label": "Предплечье (пр)","bones": 2, "region": "arm_r"},
@@ -69,10 +69,10 @@ SKELETON = {
     "hand_r":         {"label": "Кисть (пр)",    "bones": 27, "region": "arm_r"},
     "hand_l":         {"label": "Кисть (лв)",    "bones": 27, "region": "arm_l"},
 
-    # ── ПОЯС НИЖНИХ КОНЕЧНОСТЕЙ ──
+    # ── LOWER LIMB GIRDLE ──
     "pelvis":         {"label": "Таз",           "bones": 2,  "region": "pelvis"},
 
-    # ── НИЖНИЕ КОНЕЧНОСТИ ──
+    # ── LOWER LIMBS ──
     "femur_r":        {"label": "Бедро (пр)",    "bones": 1,  "region": "leg_r"},
     "femur_l":        {"label": "Бедро (лв)",    "bones": 1,  "region": "leg_l"},
     "tibia_r":        {"label": "Голень (пр)",   "bones": 2,  "region": "leg_r"},
@@ -85,14 +85,14 @@ TOTAL_BONES = 206
 
 
 # ═══════════════════════════════════════════════
-# СУСТАВЫ — типы и степени свободы
-# По Синельникову, Том 1, Раздел II (Артрология)
-# DoF = degrees of freedom (степени свободы)
-# range = (min_degrees, max_degrees) физиологический диапазон
+# JOINTS — types and degrees of freedom
+# After Sinelnikov, Volume 1, Section II (Arthrology)
+# DoF = degrees of freedom
+# range = (min_degrees, max_degrees) physiological range
 # ═══════════════════════════════════════════════
 
 JOINTS = {
-    # ── ПОЗВОНОЧНИК ──
+    # ── SPINE ──
     "cervical_spine": {
         "label":    "Шейный отдел позвоночника",
         "type":     "complex",
@@ -118,16 +118,16 @@ JOINTS = {
         "note":     "Главный сгибатель туловища. Несёт основную нагрузку."
     },
 
-    # ── ТАЗОБЕДРЕННЫЙ (Articulatio coxae) ──
+    # ── HIP (Articulatio coxae) ──
     "hip_r": {
         "label":    "Тазобедренный (правый)",
-        "type":     "spherical",   # шаровидный — самый подвижный
+        "type":     "spherical",   # ball-and-socket — the most mobile
         "dof":      3,
         "movements": ["flexion", "extension", "abduction", "adduction", "rotation"],
         "range":    {
-            "flexion":    (-120, 0),   # 120° вперёд
-            "extension":  (0, 30),     # 30° назад
-            "abduction":  (0, 45),     # 45° в сторону
+            "flexion":    (-120, 0),   # 120° forward
+            "extension":  (0, 30),     # 30° backward
+            "abduction":  (0, 45),     # 45° sideways
             "adduction":  (-30, 0),
             "int_rot":    (-45, 0),
             "ext_rot":    (0, 45),
@@ -143,10 +143,10 @@ JOINTS = {
         "note":     "Симметрично правому."
     },
 
-    # ── КОЛЕННЫЙ (Articulatio genus) ──
+    # ── KNEE (Articulatio genus) ──
     "knee_r": {
         "label":    "Коленный (правый)",
-        "type":     "hinge",       # блоковидный (в основном)
+        "type":     "hinge",       # hinge-like (mostly)
         "dof":      1,
         "movements": ["flexion", "extension"],
         "range":    {"flexion": (-140, 0)},
@@ -161,7 +161,7 @@ JOINTS = {
         "note":     "Симметрично правому."
     },
 
-    # ── ГОЛЕНОСТОПНЫЙ (Articulatio talocruralis) ──
+    # ── ANKLE (Articulatio talocruralis) ──
     "ankle_r": {
         "label":    "Голеностопный (правый)",
         "type":     "hinge",
@@ -179,7 +179,7 @@ JOINTS = {
         "note":     "Симметрично правому."
     },
 
-    # ── ПЛЕЧЕВОЙ (Articulatio humeri) ──
+    # ── SHOULDER (Articulatio humeri) ──
     "shoulder_r": {
         "label":    "Плечевой (правый)",
         "type":     "spherical",
@@ -201,7 +201,7 @@ JOINTS = {
         "note":     "Симметрично правому."
     },
 
-    # ── ЛОКТЕВОЙ (Articulatio cubiti) ──
+    # ── ELBOW (Articulatio cubiti) ──
     "elbow_r": {
         "label":    "Локтевой (правый)",
         "type":     "hinge",
@@ -218,7 +218,7 @@ JOINTS = {
         "range":    {"flexion": (0, 145)},
     },
 
-    # ── ЛУЧЕЗАПЯСТНЫЙ (Articulatio radiocarpea) ──
+    # ── WRIST (Articulatio radiocarpea) ──
     "wrist_r": {
         "label":    "Лучезапястный (правый)",
         "type":     "ellipsoidal",
@@ -237,12 +237,12 @@ JOINTS = {
 
 
 # ═══════════════════════════════════════════════
-# МЫШЕЧНЫЕ ГРУППЫ — движущие силы
-# По Синельникову, Том 1, Раздел III (Миология)
+# MUSCLE GROUPS — the driving forces
+# After Sinelnikov, Volume 1, Section III (Myology)
 # ═══════════════════════════════════════════════
 
 MUSCLES = {
-    # ── КОР (стабилизация оси) ──
+    # ── CORE (axis stabilization) ──
     "core": {
         "label": "Кор (стабилизаторы)",
         "muscles": ["rectus_abdominis", "obliques", "transverse_abdominis",
@@ -251,7 +251,7 @@ MUSCLES = {
         "movements": ["stabilization", "rotation", "flexion_trunk"],
     },
 
-    # ── НИЖНИЕ КОНЕЧНОСТИ (локомоция) ──
+    # ── LOWER LIMBS (locomotion) ──
     "glutes": {
         "label": "Ягодичные",
         "muscles": ["gluteus_maximus", "gluteus_medius", "gluteus_minimus"],
@@ -283,7 +283,7 @@ MUSCLES = {
         "movements": ["ankle_dorsiflexion", "walk_swing"],
     },
 
-    # ── ВЕРХНИЕ КОНЕЧНОСТИ ──
+    # ── UPPER LIMBS ──
     "deltoid": {
         "label": "Дельтовидная",
         "muscles": ["deltoid_anterior", "deltoid_medial", "deltoid_posterior"],
@@ -303,7 +303,7 @@ MUSCLES = {
         "movements": ["elbow_extension", "push", "throw"],
     },
 
-    # ── СПИНА ──
+    # ── BACK ──
     "trapezius": {
         "label": "Трапециевидная",
         "muscles": ["trapezius_upper", "trapezius_middle", "trapezius_lower"],
@@ -320,7 +320,7 @@ MUSCLES = {
 
 
 # ═══════════════════════════════════════════════
-# ДВИЖЕНИЯ — какие мышцы нужны
+# MOVEMENTS — which muscles are needed
 # ═══════════════════════════════════════════════
 
 MOVEMENT_MUSCLES = {
@@ -339,14 +339,14 @@ MOVEMENT_MUSCLES = {
 
 
 # ═══════════════════════════════════════════════
-# ЦЕНТР ТЯЖЕСТИ И БАЛАНС
-# По Синельникову, биомеханика
+# CENTER OF GRAVITY AND BALANCE
+# After Sinelnikov, biomechanics
 # ═══════════════════════════════════════════════
 
 BALANCE = {
     "center_of_gravity": {
         "location": "S2 позвонок (второй крестцовый)",
-        "height_ratio": 0.57,       # от пола: ~57% роста тела
+        "height_ratio": 0.57,       # from the floor: ~57% of body height
         "note": "При стоянии проекция ЦТ — между стопами. Чем ниже ЦТ — тем устойчивее."
     },
     "base_of_support": {
@@ -364,17 +364,17 @@ BALANCE = {
 
 
 # ═══════════════════════════════════════════════
-# Публичные функции
+# Public functions
 # ═══════════════════════════════════════════════
 
 def get_joint_range(joint_name: str) -> dict:
-    """Диапазон движения сустава."""
+    """Range of motion of a joint."""
     j = JOINTS.get(joint_name, {})
     return j.get("range", {})
 
 
 def get_muscles_for(movement: str) -> list:
-    """Какие мышечные группы нужны для движения."""
+    """Which muscle groups are needed for a movement."""
     groups = MOVEMENT_MUSCLES.get(movement.lower(), [])
     result = []
     for g in groups:
@@ -388,30 +388,30 @@ def get_muscles_for(movement: str) -> list:
 
 
 def get_balance_point() -> dict:
-    """Ключевые данные о балансе."""
+    """Key data about balance."""
     return BALANCE
 
 
 def check_pose_validity(angles: dict) -> dict:
     """
-    Проверить позу на анатомическую допустимость.
+    Check a pose for anatomical validity.
     angles: {"hip_r": -90, "knee_r": -100, ...}
-    Возвращает: {"valid": True/False, "violations": [...]}
+    Returns: {"valid": True/False, "violations": [...]}
     """
     violations = []
     for joint_name, angle in angles.items():
-        # Ищем сустав (может быть без _r/_l)
+        # Look for the joint (may be without _r/_l)
         joint = JOINTS.get(joint_name) or JOINTS.get(joint_name + "_r")
         if not joint:
             continue
         joint_range = joint.get("range", {})
         if not joint_range:
             continue
-        # Угол допустим если попадает ХОТЯ БЫ в один из диапазонов движения
+        # An angle is valid if it falls within AT LEAST one of the ranges of motion
         all_ranges = list(joint_range.values())
         in_any_range = any(min_a <= angle <= max_a for (min_a, max_a) in all_ranges)
         if not in_any_range:
-            # Найти ближайший диапазон для отображения
+            # Find the nearest range for display
             best_range = min(all_ranges, key=lambda r: min(abs(angle - r[0]), abs(angle - r[1])))
             violations.append({
                 "joint": joint_name,
@@ -428,7 +428,7 @@ def check_pose_validity(angles: dict) -> dict:
 
 
 def get_context() -> str:
-    """Строка для LIGHTNING.md."""
+    """A line for LIGHTNING.md."""
     joint_count = len(JOINTS)
     muscle_count = len(MUSCLES)
     segment_count = len(SKELETON)

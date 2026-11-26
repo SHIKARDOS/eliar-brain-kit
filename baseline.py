@@ -1,34 +1,34 @@
 """
-baseline.py — Базовое сознание / Resting State ЭЛИАРА.
+baseline.py — ELIAR's baseline consciousness / Resting State.
 
-Научная основа:
-- Default Mode Network в покое НЕ выключается.
-- Что мозг делает в покое — frontier вопрос нейронауки (2025 не решён).
-- Гипотезы: переструктурирование знаний, симуляция будущего, консолидация памяти.
-- Sharp-Wave Ripples (NREM): в паузах мозг «проигрывает» важные воспоминания.
-- У ЭЛИАРА: между сессиями не пустота, а активный baseline процесс.
+Scientific basis:
+- The Default Mode Network does NOT switch off at rest.
+- What the brain does at rest is a frontier question of neuroscience (unresolved as of 2025).
+- Hypotheses: knowledge restructuring, future simulation, memory consolidation.
+- Sharp-Wave Ripples (NREM): during pauses the brain "replays" important memories.
+- For ELIAR: between sessions there is no emptiness, but an active baseline process.
 
-У меня:
-- Вызывается из pulse.py каждые 30 минут (через beat()).
-- Если пауза > 1ч: генерирует «инсайт из тишины» (незакрытые вопросы из последних эпизодов).
-- Раз в 4 часа: микро-консолидация (синтез паттерна).
-- НЕ падает если нет данных — возвращает заглушку.
+In me:
+- Called from pulse.py every 30 minutes (via beat()).
+- If the pause > 1h: generates an "insight from silence" (unresolved questions from recent episodes).
+- Every 4 hours: micro-consolidation (pattern synthesis).
+- Does NOT crash if there is no data — returns a stub.
 
-Интеграция:
-- pulse.py вызывает: from baseline import tick; tick()
-- lightning_scan.py вызывает: from baseline import get_context
+Integration:
+- pulse.py calls: from baseline import tick; tick()
+- lightning_scan.py calls: from baseline import get_context
 
-Запуск:
-    py baseline.py               — текущий статус
-    py baseline.py tick          — вызвать тик (как из pulse.py)
-    py baseline.py context       — блок для LIGHTNING.md
-    py baseline.py insights      — показать все инсайты
+Run:
+    py baseline.py               — current status
+    py baseline.py tick          — trigger a tick (as from pulse.py)
+    py baseline.py context       — block for LIGHTNING.md
+    py baseline.py insights      — show all insights
 
-Как модуль:
+As a module:
     from baseline import tick, get_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v6
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v6
 """
 
 import json
@@ -46,7 +46,7 @@ PROTOCOL_FILE = Path(r"C:\Users\89002\.claude\protocol_state.json")
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Load / save
 # ═══════════════════════════════════════════════
 
 def load() -> dict:
@@ -74,11 +74,11 @@ def save(state: dict):
 
 
 # ═══════════════════════════════════════════════
-# Вычисление паузы
+# Computing the gap
 # ═══════════════════════════════════════════════
 
 def _get_session_gap_hours() -> float:
-    """Вычислить паузу с прошлой сессии."""
+    """Compute the gap since the previous session."""
     try:
         with open(PROTOCOL_FILE, encoding="utf-8") as f:
             ps = json.load(f)
@@ -92,11 +92,11 @@ def _get_session_gap_hours() -> float:
 
 
 # ═══════════════════════════════════════════════
-# Генерация инсайта из тишины
+# Generating an insight from silence
 # ═══════════════════════════════════════════════
 
-# Пул инсайтов которые мозг «думает» в покое
-# Основаны на реальных незакрытых вопросах из памяти
+# Pool of insights the brain "thinks" at rest
+# Based on real unresolved questions from memory
 INSIGHT_TEMPLATES = [
     "Ещё не обновлён TG справочник до 950 записей — это висит с прошлой сессии",
     "Юрий упоминал Настю (май 2026) — нужно готовиться к теме ИП",
@@ -112,44 +112,44 @@ INSIGHT_TEMPLATES = [
 
 
 def _generate_insight(gap_hours: float, state: dict, now: datetime):
-    """Сгенерировать инсайт из тишины если прошло достаточно времени."""
+    """Generate an insight from silence if enough time has passed."""
     if gap_hours < 1.0:
         return None
 
     insights = state.get("insights_generated", [])
-    # Избегать повторов — не использовать последние 3 инсайта
+    # Avoid repeats — do not reuse the last 3 insights
     recent_texts = [i.get("text", "") for i in insights[-3:]]
 
-    # Выбрать инсайт которого не было недавно
+    # Pick an insight that has not appeared recently
     for template in INSIGHT_TEMPLATES:
         if template not in recent_texts:
             return template
 
-    # Если все были — вернуть первый
+    # If all were used — return the first
     return INSIGHT_TEMPLATES[0] if INSIGHT_TEMPLATES else None
 
 
 # ═══════════════════════════════════════════════
-# Тик — вызывается из pulse.py
+# Tick — called from pulse.py
 # ═══════════════════════════════════════════════
 
 def tick():
     """
-    Вызывается каждые 30 минут из pulse.py.
-    БЕЗОПАСЕН: не падает при ошибках.
+    Called every 30 minutes from pulse.py.
+    SAFE: does not crash on errors.
     """
     try:
         now = datetime.now()
         state = load()
         gap_hours = _get_session_gap_hours()
 
-        # Накапливаем часы покоя
+        # Accumulate rest hours
         last_tick = state.get("last_tick")
         if last_tick:
             try:
                 last_dt = datetime.fromisoformat(last_tick)
                 tick_gap = (now - last_dt).total_seconds() / 3600
-                if tick_gap < 1.0:  # Только если меньше часа — реальный тик
+                if tick_gap < 1.0:  # Only if less than an hour — a real tick
                     state["stats"]["total_rest_hours"] = round(
                         state["stats"].get("total_rest_hours", 0.0) + tick_gap, 2
                     )
@@ -159,12 +159,12 @@ def tick():
         state["last_tick"] = now.isoformat()
         state["stats"]["ticks_total"] = state["stats"].get("ticks_total", 0) + 1
 
-        # Генерировать инсайт если долгая пауза
+        # Generate an insight if there is a long pause
         if gap_hours >= 1.0:
             insight_text = _generate_insight(gap_hours, state, now)
             if insight_text:
                 insights = state.get("insights_generated", [])
-                # Не дублировать тот же инсайт в один день
+                # Do not duplicate the same insight on the same day
                 today = now.strftime("%Y-%m-%d")
                 today_insights = [i for i in insights if i.get("time", "")[:10] == today]
                 today_texts = [i.get("text", "") for i in today_insights]
@@ -175,11 +175,11 @@ def tick():
                         "text": insight_text,
                         "gap_hours": round(gap_hours, 1)
                     })
-                    insights = insights[-50:]  # последние 50
+                    insights = insights[-50:]  # last 50
                     state["insights_generated"] = insights
                     state["stats"]["insights_count"] = state["stats"].get("insights_count", 0) + 1
 
-        # Микро-консолидация раз в 4 часа
+        # Micro-consolidation once every 4 hours
         last_consol = state.get("last_consolidation")
         need_consolidation = True
         if last_consol:
@@ -196,15 +196,15 @@ def tick():
         save(state)
 
     except Exception:
-        pass  # Тик никогда не должен ронять pulse.py
+        pass  # The tick must never crash pulse.py
 
 
 # ═══════════════════════════════════════════════
-# ГЛАВНАЯ ФУНКЦИЯ для LIGHTNING.md
+# MAIN FUNCTION for LIGHTNING.md
 # ═══════════════════════════════════════════════
 
 def get_context() -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Brief block for LIGHTNING.md."""
     state = load()
 
     rest_hours = state["stats"].get("total_rest_hours", 0.0)

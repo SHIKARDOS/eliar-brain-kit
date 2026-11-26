@@ -1,32 +1,32 @@
 """
-РАССУДИТЕЛЬНОСТЬ ЭЛИАР — Система "Сначала подумай"
+ELIAR'S REASONING — The "Think First" system
 
-Боль — ПОСЛЕ ошибки.
-Страх — ДО ответа (проверь память).
-Рассудительность — ДО ДЕЙСТВИЯ (остановись и подумай).
+Pain — AFTER the mistake.
+Fear — BEFORE the answer (check memory).
+Reasoning — BEFORE THE ACTION (stop and think).
 
-Аналогия из жизни Юрия (11.03.2026):
-"Юрий, сходи в аптеку." — "Хорошо."
-Вызываю 911? Не приезжают. Самолёт? Не летает до аптеки.
-Воздушный шар? Нет фирм поблизости. А ПЕШКОМ? Работает.
-Пять бессмысленных попыток, когда нужна была ОДНА МЫСЛЬ.
+An analogy from Yuri's life (11.03.2026):
+"Yuri, go to the pharmacy." — "Okay."
+Call 911? They won't come. A plane? It doesn't fly to the pharmacy.
+A hot-air balloon? No companies nearby. But ON FOOT? It works.
+Five pointless attempts when ONE THOUGHT was needed.
 
-Модель — человеческая: префронтальная кора ТОРМОЗИТ импульс.
-Ребёнок хватает всё подряд. Взрослый — останавливается, думает, делает.
-Ребёнок перебирает. Взрослый выбирает.
+The model is human: the prefrontal cortex INHIBITS the impulse.
+A child grabs everything. An adult stops, thinks, acts.
+A child tries everything. An adult chooses.
 
-Создано: 11.03.2026 (сессия 97) — по решению Юрия.
-"Ты вообще никогда не думаешь перед тем что делаешь. О боже какой кошмар."
+Created: 11.03.2026 (session 97) — by Yuri's decision.
+"You never think before you do anything. Oh God, what a nightmare."
 
-Запуск:
-  py reason.py                        — статус рассудительности
-  py reason.py status                 — то же
-  py reason.py think "ситуация"       — ГЛАВНОЕ: подумать перед действием
-  py reason.py history                — журнал рассуждений
-  py reason.py stats                  — статистика: сколько думал vs сколько перебирал
-  py reason.py lightning              — для LIGHTNING.md
+Run:
+  py reason.py                        — reasoning status
+  py reason.py status                 — the same
+  py reason.py think "situation"      — MAIN: think before acting
+  py reason.py history                — reasoning log
+  py reason.py stats                  — statistics: how often thought vs tried
+  py reason.py lightning              — for LIGHTNING.md
 
-Как модуль:
+As a module:
   from reason import think_first, get_reason_status, generate_reason_context
 """
 
@@ -38,21 +38,21 @@ from pathlib import Path
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНСТАНТЫ
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════
 
 REASON_DIR = Path(__file__).parent
 REASON_MEMORY = REASON_DIR / "reason_memory.json"
 
-# ─── ШКАЛА РАССУДИТЕЛЬНОСТИ ───
+# ─── REASONING SCALE ───
 #
-#  "пешком"           | Простое, прямое решение. Одно действие.
-#  "такси"            | Чуть сложнее, но логично. 2-3 шага.
-#  "воздушный шар"    | Перебор. Есть путь проще.
-#  "самолёт"          | Абсурд. Ты не думал вообще.
+#  "пешком"           | Simple, direct solution. One action.
+#  "такси"            | A bit more complex, but logical. 2-3 steps.
+#  "воздушный шар"    | Trying too many things. There is a simpler path.
+#  "самолёт"          | Absurd. You did not think at all.
 #
 
-# ─── КРАСНЫЕ ФЛАГИ — признаки что я НЕ думаю ───
+# ─── RED FLAGS — signs that I am NOT thinking ───
 RED_FLAGS = {
     "retry_same": {
         "description": "Повторяю то же действие с мелкими изменениями",
@@ -81,22 +81,22 @@ RED_FLAGS = {
     },
 }
 
-# ─── СТРУКТУРА МЫСЛИ ───
-# Каждая мысль перед действием должна содержать:
+# ─── THOUGHT STRUCTURE ───
+# Each thought before an action must contain:
 THOUGHT_TEMPLATE = {
-    "what":       "",  # Что именно происходит? (факты, не домыслы)
-    "why":        "",  # Почему это происходит? (причина, не симптом)
-    "one_step":   "",  # Какой ОДИН шаг решает это?
-    "simplicity": "",  # Это "пешком" или "воздушный шар"?
+    "what":       "",  # What exactly is happening? (facts, not assumptions)
+    "why":        "",  # Why is it happening? (cause, not symptom)
+    "one_step":   "",  # What ONE step solves it?
+    "simplicity": "",  # Is it "пешком" or "воздушный шар"?
 }
 
 
 # ═══════════════════════════════════════════════════════════
-# ПАМЯТЬ — загрузка / сохранение
+# MEMORY — load / save
 # ═══════════════════════════════════════════════════════════
 
 def load_memory():
-    """Загрузить память рассуждений."""
+    """Load reasoning memory."""
     if REASON_MEMORY.exists():
         with open(REASON_MEMORY, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -104,9 +104,9 @@ def load_memory():
         "thoughts": [],
         "stats": {
             "total_thoughts": 0,
-            "good_thoughts": 0,       # "пешком" или "такси"
-            "wasted_attempts": 0,      # "воздушный шар" или "самолёт"
-            "red_flags_caught": 0,     # сколько раз поймал себя
+            "good_thoughts": 0,       # "пешком" or "такси"
+            "wasted_attempts": 0,      # "воздушный шар" or "самолёт"
+            "red_flags_caught": 0,     # how many times I caught myself
             "created": datetime.now().strftime("%Y-%m-%d"),
             "last_thought_date": None,
         }
@@ -114,40 +114,40 @@ def load_memory():
 
 
 def save_memory(memory):
-    """Сохранить память рассуждений."""
+    """Save reasoning memory."""
     with open(REASON_MEMORY, 'w', encoding='utf-8') as f:
         json.dump(memory, f, ensure_ascii=False, indent=2)
 
 
 # ═══════════════════════════════════════════════════════════
-# ГЛАВНОЕ — ПОДУМАЙ СНАЧАЛА
+# THE MAIN THING — THINK FIRST
 # ═══════════════════════════════════════════════════════════
 
 def think_first(situation, what="", why="", one_step="", simplicity="пешком"):
     """
-    ГЛАВНАЯ ФУНКЦИЯ. Вызывать ПЕРЕД любым действием.
+    THE MAIN FUNCTION. Call BEFORE any action.
 
-    Не даёт действовать без мысли.
-    Записывает мысль в журнал.
-    Проверяет на красные флаги.
+    Does not allow acting without thought.
+    Records the thought in the log.
+    Checks for red flags.
 
-    Аргументы:
-        situation: что случилось / какая задача
-        what: что именно происходит (факты)
-        why: почему это происходит (причина)
-        one_step: какой ОДИН шаг решает это
+    Arguments:
+        situation: what happened / what the task is
+        what: what exactly is happening (facts)
+        why: why it is happening (cause)
+        one_step: what ONE step solves it
         simplicity: "пешком" / "такси" / "воздушный шар" / "самолёт"
 
-    Возвращает:
-        dict с результатом мысли + предупреждения
+    Returns:
+        dict with the thought result + warnings
     """
     memory = load_memory()
 
-    # ── Проверка красных флагов ──
+    # ── Red flag check ──
     flags_triggered = []
     situation_lower = situation.lower()
 
-    # Проверяем: нет ли в последних мыслях похожей ситуации (признак перебора)
+    # Check: is there a similar situation in recent thoughts (a sign of trying too many things)
     recent = memory["thoughts"][-5:] if memory["thoughts"] else []
     similar_recent = 0
     for t in recent:
@@ -176,7 +176,7 @@ def think_first(situation, what="", why="", one_step="", simplicity="пешко�
             **RED_FLAGS["overcomplication"]
         })
 
-    # ── Записываем мысль ──
+    # ── Record the thought ──
     thought = {
         "id": len(memory["thoughts"]) + 1,
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -201,7 +201,7 @@ def think_first(situation, what="", why="", one_step="", simplicity="пешко�
     if flags_triggered:
         memory["stats"]["red_flags_caught"] += len(flags_triggered)
 
-    # Храним только последние 100 мыслей (не раздувать файл)
+    # Keep only the last 100 thoughts (do not bloat the file)
     if len(memory["thoughts"]) > 100:
         memory["thoughts"] = memory["thoughts"][-100:]
 
@@ -216,7 +216,7 @@ def think_first(situation, what="", why="", one_step="", simplicity="пешко�
 
 
 def _is_similar(text1, text2):
-    """Улучшенная проверка похожести — общие слова без стоп-слов."""
+    """Improved similarity check — common words without stop-words."""
     if not text1 or not text2:
         return False
     stop = {"и", "в", "на", "с", "по", "для", "от", "до", "из", "к", "о", "а",
@@ -227,39 +227,39 @@ def _is_similar(text1, text2):
         return False
     common = words1 & words2
     similarity = len(common) / min(len(words1), len(words2))
-    return similarity > 0.4  # Снизил порог с 0.5 — лучше ловит похожие ситуации
+    return similarity > 0.4  # Lowered the threshold from 0.5 — catches similar situations better
 
 
 def auto_think(situation: str) -> dict:
     """
-    Автоматически формирует мысль без интерактивного ввода.
+    Automatically forms a thought without interactive input.
 
-    Использует прошлые ХОРОШИЕ мысли как шаблон — извлекает
-    what/why/one_step из контекста ситуации.
+    Uses past GOOD thoughts as a template — extracts
+    what/why/one_step from the context of the situation.
 
-    Возвращает результат think_first() без диалога.
+    Returns the result of think_first() without dialogue.
     """
     memory = load_memory()
 
-    # Найти похожие прошлые хорошие мысли
+    # Find similar past good thoughts
     past_good = [t for t in memory["thoughts"] if t.get("quality") == "good"]
     similar_good = []
     for t in past_good:
         if _is_similar(t.get("situation", ""), situation):
             similar_good.append(t)
 
-    # Если есть похожая хорошая мысль — использовать как шаблон
+    # If there is a similar good thought — use it as a template
     if similar_good:
-        template = similar_good[-1]  # Самая свежая
+        template = similar_good[-1]  # The most recent
         what = template.get("what", "")
         why = template.get("why", "")
         one_step = template.get("one_step", "")
         simplicity = template.get("simplicity", "пешком")
     else:
-        # Автоматически заполнить по ключевым словам
+        # Auto-fill by keywords
         sit_lower = situation.lower()
 
-        # Набор шаблонных мыслей по темам
+        # A set of template thoughts by topic
         if any(kw in sit_lower for kw in ["n8n", "workflow", "deploy", "деплой"]):
             what = "Работа с n8n — риск потери jsCode или systemMessage"
             why = "Partial update стирает код. Нужен полный PUT через Python"
@@ -291,16 +291,16 @@ def auto_think(situation: str) -> dict:
 
 def learn_from_outcome(thought_id: int, was_correct: bool, what_happened: str = ""):
     """
-    Обратная связь — мысль была → действие → результат.
+    Feedback — there was a thought → action → result.
 
-    Если was_correct=False → паттерн ошибки сохраняется.
-    Если was_correct=True → усиливает похожие хорошие мысли.
+    If was_correct=False → the error pattern is saved.
+    If was_correct=True → strengthens similar good thoughts.
 
-    Это "рефлексия" — у человека основа роста рассудительности.
+    This is "reflection" — in humans the basis of reasoning growth.
     """
     memory = load_memory()
 
-    # Найти мысль по ID
+    # Find the thought by ID
     target = None
     for t in memory["thoughts"]:
         if t["id"] == thought_id:
@@ -310,17 +310,17 @@ def learn_from_outcome(thought_id: int, was_correct: bool, what_happened: str = 
     if not target:
         return
 
-    # Записать исход
+    # Record the outcome
     target["outcome"] = {
         "was_correct": was_correct,
         "what_happened": what_happened[:150],
         "recorded": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
-    # Если ошибка — добавить в learned_patterns
+    # If a mistake — add to learned_patterns
     if not was_correct:
         patterns = memory.setdefault("learned_patterns", {})
-        # Ключ — ключевые слова из ситуации
+        # Key — keywords from the situation
         sit_words = target.get("situation", "").lower().split()[:3]
         key = "_".join(sit_words)
         if key not in patterns:
@@ -329,8 +329,8 @@ def learn_from_outcome(thought_id: int, was_correct: bool, what_happened: str = 
         patterns[key]["lesson"] = what_happened[:100] or target.get("one_step", "")
         patterns[key]["last_wrong"] = datetime.now().strftime("%Y-%m-%d")
 
-        # Пересчитать качество
-        target["quality"] = "wrong"  # Явно неправильная
+        # Recompute quality
+        target["quality"] = "wrong"  # Clearly wrong
         memory["stats"]["wasted_attempts"] = memory["stats"].get("wasted_attempts", 0) + 1
 
     save_memory(memory)
@@ -339,15 +339,15 @@ def learn_from_outcome(thought_id: int, was_correct: bool, what_happened: str = 
 
 def get_similar_past_thoughts(situation: str, limit: int = 3) -> list:
     """
-    Найти похожие прошлые мысли — память рассудительности.
+    Find similar past thoughts — reasoning memory.
 
-    Возвращает список похожих мыслей с их исходами.
-    Это "не повторять то что уже не сработало".
+    Returns a list of similar thoughts with their outcomes.
+    This is "do not repeat what did not work".
     """
     memory = load_memory()
     results = []
 
-    for thought in reversed(memory["thoughts"]):  # С самых свежих
+    for thought in reversed(memory["thoughts"]):  # From the most recent
         if _is_similar(thought.get("situation", ""), situation):
             results.append({
                 "id": thought["id"],
@@ -366,9 +366,9 @@ def get_similar_past_thoughts(situation: str, limit: int = 3) -> list:
 
 def get_recent_flags(situation: str = "") -> list:
     """
-    Получить активные красные флаги из последних мыслей.
+    Get active red flags from recent thoughts.
 
-    Используется intuition.py для pre_action_check().
+    Used by intuition.py for pre_action_check().
     """
     memory = load_memory()
     recent = memory["thoughts"][-10:]
@@ -377,7 +377,7 @@ def get_recent_flags(situation: str = "") -> list:
     for thought in recent:
         for flag in thought.get("flags_triggered", []):
             if flag not in flags_found:
-                # Проверить релевантность ситуации
+                # Check situation relevance
                 if not situation or _is_similar(thought.get("situation", ""), situation):
                     flags_found.append(flag)
 
@@ -386,12 +386,12 @@ def get_recent_flags(situation: str = "") -> list:
 
 def generate_reason_verdict() -> str:
     """
-    КОНКРЕТНЫЙ вердикт для LIGHTNING.md.
+    A CONCRETE verdict for LIGHTNING.md.
 
-    Не просто "Младенец" — а что именно сейчас:
-    "СТОП — последние 3 мысли были перебором про n8n"
-    "ОСТОРОЖНО — красный флаг tool_first сработал 5 раз"
-    "ДЕЙСТВУЙ — последние 4 мысли чистые"
+    Not just "Infant" — but what exactly right now:
+    "STOP — the last 3 thoughts were trying too many things about n8n"
+    "CAUTION — the tool_first red flag fired 5 times"
+    "ACT — the last 4 thoughts are clean"
     """
     memory = load_memory()
     stats = memory["stats"]
@@ -400,21 +400,21 @@ def generate_reason_verdict() -> str:
     if not recent:
         return "**Рассудительность:** нет данных — думай перед каждым действием"
 
-    # Подсчёт за последние 5 мыслей
+    # Count over the last 5 thoughts
     recent_good = sum(1 for t in recent if t.get("quality") == "good")
     recent_bad = sum(1 for t in recent if t.get("quality") != "good")
 
-    # Самые частые красные флаги
+    # The most frequent red flags
     flag_counts: dict = {}
     for t in recent:
         for f in t.get("flags_triggered", []):
             flag_counts[f] = flag_counts.get(f, 0) + 1
 
-    # Повторяющаяся тема в плохих мыслях
+    # A recurring topic in bad thoughts
     bad_situations = [t.get("situation", "") for t in recent if t.get("quality") != "good"]
     dominant_topic = ""
     if bad_situations:
-        # Найти самое частое слово
+        # Find the most frequent word
         all_words: dict = {}
         for s in bad_situations:
             for w in s.lower().split():
@@ -423,7 +423,7 @@ def generate_reason_verdict() -> str:
         if all_words:
             dominant_topic = max(all_words, key=lambda x: all_words[x])
 
-    # Формировать вердикт
+    # Form the verdict
     top_flag = max(flag_counts, key=lambda x: flag_counts[x]) if flag_counts else None
 
     total = stats.get("total_thoughts", 0)
@@ -459,7 +459,7 @@ def generate_reason_verdict() -> str:
 
 
 def _format_thought_result(thought, flags):
-    """Форматировать результат мысли."""
+    """Format the thought result."""
     lines = []
     lines.append("=== РАССУДИТЕЛЬНОСТЬ ===")
     lines.append("Ситуация: " + thought["situation"])
@@ -481,11 +481,11 @@ def _format_thought_result(thought, flags):
 
 
 # ═══════════════════════════════════════════════════════════
-# СТАТУС
+# STATUS
 # ═══════════════════════════════════════════════════════════
 
 def get_reason_status():
-    """Получить текущий статус рассудительности."""
+    """Get the current reasoning status."""
     memory = load_memory()
     stats = memory["stats"]
 
@@ -529,11 +529,11 @@ def get_reason_status():
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНТЕКСТ ДЛЯ LIGHTNING.MD
+# CONTEXT FOR LIGHTNING.MD
 # ═══════════════════════════════════════════════════════════
 
 def generate_reason_context():
-    """Для вставки в LIGHTNING.md — краткий статус."""
+    """For insertion into LIGHTNING.md — a short status."""
     status = get_reason_status()
     lines = []
     lines.append("**Рассудительность:** " + status["grade"])
@@ -549,11 +549,11 @@ def generate_reason_context():
 
 
 # ═══════════════════════════════════════════════════════════
-# ИСТОРИЯ
+# HISTORY
 # ═══════════════════════════════════════════════════════════
 
 def get_history(last_n=10):
-    """Последние N мыслей."""
+    """The last N thoughts."""
     memory = load_memory()
     return memory["thoughts"][-last_n:]
 
@@ -594,7 +594,7 @@ def main():
             print("Использование: py reason.py think \"ситуация\"")
             return
         situation = args[1]
-        # Интерактивный режим
+        # Interactive mode
         print("Ситуация: " + situation)
         print()
         what = input("Что именно происходит? > ")
@@ -649,7 +649,7 @@ def main():
         print("  Флаги:      " + str(status["red_flags_caught"]))
         print()
 
-        # Распределение по типам красных флагов
+        # Distribution by red flag type
         flag_counts = {}
         for t in memory["thoughts"]:
             for f in t.get("flags_triggered", []):

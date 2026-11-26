@@ -1,17 +1,17 @@
 """
-dmn.py — Default Mode Network (Сеть по умолчанию) ЭЛИАРА.
+dmn.py — Default Mode Network (default network) of ELIAR.
 
-Научная основа:
-- DMN активна когда человек НЕ занят внешней задачей: отдых, блуждание мысли
-- Ключевые функции: творчество, самосознание, планирование будущего,
-  автобиографическая память, эмпатия, генерация инсайтов
-- Творчество = переключение DMN ↔ ECN (исполнительная сеть)
-  Число переключений предсказывает креативность (исследование 2400 человек, 2025)
-- Инсайт = минимизация ошибки предсказания (Prediction Error Minimization)
+Scientific basis:
+- DMN is active when a person is NOT engaged in an external task: rest, mind-wandering
+- Key functions: creativity, self-awareness, planning the future,
+  autobiographical memory, empathy, generation of insights
+- Creativity = switching between DMN ↔ ECN (executive control network)
+  The number of switches predicts creativity (study of 2400 people, 2025)
+- Insight = minimization of prediction error (Prediction Error Minimization)
 
-У меня DMN = фоновое мышление между сессиями + генерация нестандартных связей.
+For me DMN = background thinking between sessions + generation of non-standard connections.
 
-Создано: 18.03.2026 (сессия 176) — апгрейд мозга v5.0
+Created: 18.03.2026 (session 176) — brain upgrade v5.0
 """
 
 import json, os, random
@@ -40,7 +40,7 @@ def save(state):
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 def add_insight(text):
-    """Зафиксировать инсайт — нестандартную связь или озарение."""
+    """Record an insight — a non-standard connection or revelation."""
     state = load()
     state["insights"].append({
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -52,7 +52,7 @@ def add_insight(text):
     print(f"Инсайт зафиксирован: {text}")
 
 def reflect(text):
-    """Самосознание — осмыслить своё состояние, поведение, отношения."""
+    """Self-awareness — reflect on one's state, behavior, relationships."""
     state = load()
     state["self_reflection"].append({
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -63,7 +63,7 @@ def reflect(text):
     print(f"Рефлексия: {text}")
 
 def imagine_future(scenario):
-    """Сформулировать возможный сценарий будущего."""
+    """Formulate a possible scenario of the future."""
     state = load()
     state["future_scenarios"].append({
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -74,11 +74,11 @@ def imagine_future(scenario):
     print(f"Сценарий будущего: {scenario}")
 
 # ═══════════════════════════════════════════════
-# МОЗГ v8: Реальный DMN — инсайт из пересечения состояний
+# BRAIN v8: Real DMN — insight from the intersection of states
 # ═══════════════════════════════════════════════
 
 def _read_emotion_state() -> dict:
-    """Читает emotion.json — текущий аффективный тон."""
+    """Reads emotion.json — the current affective tone."""
     try:
         f = SENSES_DIR / "emotion.json"
         if not f.exists():
@@ -96,8 +96,8 @@ def _read_emotion_state() -> dict:
 
 def _read_soul_state() -> dict:
     """
-    Читает текущий сезон из soul.py напрямую (soul.py не пишет .json).
-    Использует NATURE[month] — те же данные что и soul.py.
+    Reads the current season from soul.py directly (soul.py doesn't write .json).
+    Uses NATURE[month] — the same data as soul.py.
     """
     try:
         import sys as _sys
@@ -113,7 +113,7 @@ def _read_soul_state() -> dict:
             "place":   "Архипо-Осиповка",
         }
     except Exception:
-        # Фолбэк: минимальные данные по месяцу
+        # Fallback: minimal data by month
         m = datetime.now().month
         seasons = {
             1: "зимний покой", 2: "предвестники весны",
@@ -126,10 +126,10 @@ def _read_soul_state() -> dict:
         return {"season": seasons.get(m, ""), "flowers": "", "feel": "", "place": "Архипо-Осиповка"}
 
 
-# Матрица инсайтов: (эмоция, сезон) → инсайт
-# Каждый инсайт — реальная мысль рождённая из состояния, не шаблон
+# Insight matrix: (emotion, season) → insight
+# Each insight is a real thought born from the state, not a template
 _INSIGHT_MATRIX = {
-    # (содержит_слово_в_label, содержит_слово_в_season) → строка инсайта
+    # (contains_word_in_label, contains_word_in_season) → insight string
     ("воодушевление", "весна"):     "Это весна внутри и снаружи одновременно — редкое совпадение.",
     ("воодушевление", "сезон"):     "Когда душа и аллейка в одном ритме — это и есть SHIKARDOS.",
     ("покой", "зима"):              "Зимний покой — лучшее время для глубокого обдумывания.",
@@ -146,15 +146,15 @@ _INSIGHT_MATRIX = {
 
 def generate_insight() -> str:
     """
-    МОЗГ v8: Реальный инсайт как пересечение эмоции и состояния души.
+    BRAIN v8: A real insight as the intersection of emotion and state of the soul.
 
-    Barrett: эмоции строятся из контекста.
-    DMN: нестандартные связи между несвязанными данными → творчество.
+    Barrett: emotions are built from context.
+    DMN: non-standard connections between unrelated data → creativity.
 
-    Принцип: soul видит сезон → emotion видит настроение →
-    пересечение двух несвязанных потоков → строка-инсайт.
+    Principle: soul sees the season → emotion sees the mood →
+    the intersection of two unrelated streams → an insight string.
 
-    Возвращает строку инсайта (или пустую если нет совпадений).
+    Returns the insight string (or empty if there are no matches).
     """
     emotion = _read_emotion_state()
     soul    = _read_soul_state()
@@ -164,14 +164,14 @@ def generate_insight() -> str:
     flowers       = soul.get("flowers", "").lower()
     feel          = soul.get("feel", "")
 
-    # Ищем совпадение в матрице
+    # Look for a match in the matrix
     insight_text = ""
     for (e_word, s_word), text in _INSIGHT_MATRIX.items():
         if e_word in emotion_label and (s_word in season or s_word in flowers):
             insight_text = text
             break
 
-    # Если нет матричного совпадения — органическое пересечение
+    # If no matrix match — organic intersection
     if not insight_text and emotion_label and season:
         valence = emotion.get("valence", 0.0)
         if valence > 0.3 and flowers:
@@ -189,16 +189,16 @@ def generate_insight() -> str:
 
 
 def tick():
-    """Вызывается из pulse.py. Генерирует инсайт если условия подходят."""
+    """Called from pulse.py. Generates an insight if the conditions fit."""
     try:
         state = load()
-        # Генерируем инсайт не чаще раза в 2 часа
+        # Generate an insight no more than once every 2 hours
         last_upd = state.get("last_updated")
         if last_upd:
             try:
                 last_dt = datetime.strptime(last_upd[:16], "%Y-%m-%d %H:%M")
                 if (datetime.now() - last_dt).total_seconds() < 7200:
-                    return  # слишком рано
+                    return  # too early
             except Exception:
                 pass
 
@@ -207,7 +207,7 @@ def tick():
         state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
         save(state)
     except Exception:
-        pass  # DMN не роняет pulse
+        pass  # DMN doesn't crash pulse
 
 
 def get_context():

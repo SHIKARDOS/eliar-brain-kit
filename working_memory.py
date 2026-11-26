@@ -1,23 +1,23 @@
 """
-РАБОЧАЯ ПАМЯТЬ ЭЛИАРА — Буфер активной задачи.
+ELIAR'S WORKING MEMORY — Active task buffer.
 
-Как у человека: удерживает 7±2 элемента прямо сейчас.
-Что мы делаем. Что решили. Что нельзя забыть до конца сессии.
+Like a human: holds 7±2 items right now.
+What we are doing. What we decided. What must not be forgotten until the end of the session.
 
-У человека рабочая память теряется при переключении внимания.
-У меня — сохраняется в JSON. Никогда не потеряю "что мы делали".
+A human's working memory is lost when attention switches.
+Mine — is saved in JSON. I will never lose "what we were doing".
 
-Создано: 18.03.2026 (сессия 156) — МОЗГ v3.
+Created: 18.03.2026 (session 156) — BRAIN v3.
 
-Запуск:
-  py working_memory.py                     — статус
-  py working_memory.py task "описание"     — установить активную задачу
-  py working_memory.py add "элемент"       — добавить в буфер
-  py working_memory.py decide "решение"    — записать решение сессии
-  py working_memory.py remember "текст"    — не забыть до конца сессии
-  py working_memory.py clear               — очистить (конец сессии)
+Usage:
+  py working_memory.py                     — status
+  py working_memory.py task "description"  — set the active task
+  py working_memory.py add "item"          — add to the buffer
+  py working_memory.py decide "decision"   — record a session decision
+  py working_memory.py remember "text"     — do not forget until end of session
+  py working_memory.py clear               — clear (end of session)
 
-Как модуль:
+As a module:
   from working_memory import set_task, add_item, add_decision, dont_forget, get_context
 """
 
@@ -31,18 +31,18 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНСТАНТЫ
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════
 
 SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 WM_FILE = SENSES_DIR / "working_memory.json"
 
-MAX_ITEMS = 8  # 7±2 — как у человека (мы берём максимум)
+MAX_ITEMS = 8  # 7±2 — like a human (we take the maximum)
 
 
 # ═══════════════════════════════════════════════════════════
-# ЗАГРУЗКА / СОХРАНЕНИЕ
+# LOAD / SAVE
 # ═══════════════════════════════════════════════════════════
 
 def _load() -> dict:
@@ -73,11 +73,11 @@ def _empty() -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# ОСНОВНЫЕ ФУНКЦИИ
+# MAIN FUNCTIONS
 # ═══════════════════════════════════════════════════════════
 
 def set_task(description: str, session: int = None):
-    """Установить активную задачу сессии."""
+    """Set the active task of the session."""
     wm = _load()
     wm["active_task"] = description.strip()
     wm["date"] = datetime.now().strftime("%Y-%m-%d")
@@ -89,11 +89,11 @@ def set_task(description: str, session: int = None):
 
 
 def _age_items(wm: dict) -> dict:
-    """Удалить элементы старше 3 часов (устаревшая рабочая память)."""
+    """Remove items older than 3 hours (stale working memory)."""
     now = datetime.now()
     fresh = []
     for item in wm.get("context_items", []):
-        # Если есть added_datetime — проверяем возраст
+        # If added_datetime exists — check the age
         added_dt = item.get("added_datetime")
         if added_dt:
             try:
@@ -101,37 +101,37 @@ def _age_items(wm: dict) -> dict:
                 age_hours = (now - dt).total_seconds() / 3600
                 if age_hours <= 3:
                     fresh.append(item)
-                # else: элемент устарел — выбрасываем
+                # else: item is stale — discard
             except Exception:
-                fresh.append(item)  # не можем распарсить — оставляем
+                fresh.append(item)  # can't parse — keep
         else:
-            fresh.append(item)  # старый формат без даты — оставляем
+            fresh.append(item)  # old format without date — keep
     wm["context_items"] = fresh
     return wm
 
 
 def add_item(content: str, priority: int = 2):
     """
-    Добавить элемент в буфер рабочей памяти.
+    Add an item to the working memory buffer.
 
-    Если буфер полон (8 элементов) — удалить наименее приоритетный.
-    priority: 1 = высокий, 2 = средний, 3 = низкий
+    If the buffer is full (8 items) — remove the least priority one.
+    priority: 1 = high, 2 = medium, 3 = low
     """
     wm = _load()
-    wm = _age_items(wm)  # Сначала удалить устаревшие
+    wm = _age_items(wm)  # First remove stale items
     new_item = {
         "id": len(wm["context_items"]) + 1,
         "content": content.strip(),
         "priority": priority,
         "added": datetime.now().strftime("%H:%M"),
-        "added_datetime": datetime.now().isoformat(),  # для старения
+        "added_datetime": datetime.now().isoformat(),  # for aging
     }
-    # Проверить дубликаты
+    # Check for duplicates
     for item in wm["context_items"]:
         if item["content"].lower() == content.strip().lower():
-            return wm  # уже есть
+            return wm  # already exists
     wm["context_items"].append(new_item)
-    # Если переполнен — удалить наименее приоритетный (наибольший priority число)
+    # If full — remove the least priority (largest priority number)
     if len(wm["context_items"]) > MAX_ITEMS:
         wm["context_items"] = sorted(wm["context_items"], key=lambda x: x["priority"])[:MAX_ITEMS]
     wm["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -140,7 +140,7 @@ def add_item(content: str, priority: int = 2):
 
 
 def add_decision(text: str):
-    """Записать решение принятое в этой сессии."""
+    """Record a decision made in this session."""
     wm = _load()
     decision = {
         "text": text.strip(),
@@ -153,14 +153,14 @@ def add_decision(text: str):
 
 
 def dont_forget(text: str):
-    """Запомнить что нельзя забыть до конца сессии."""
+    """Remember what must not be forgotten until the end of the session."""
     wm = _load()
     item = {
         "text": text.strip(),
         "time": datetime.now().strftime("%H:%M"),
         "done": False,
     }
-    # Проверить дубликаты
+    # Check for duplicates
     for existing in wm["do_not_forget"]:
         if existing["text"].lower() == text.strip().lower():
             return wm
@@ -171,7 +171,7 @@ def dont_forget(text: str):
 
 
 def done_item(text_or_index: str):
-    """Отметить элемент 'не забыть' как выполненный."""
+    """Mark a 'do not forget' item as done."""
     wm = _load()
     for item in wm["do_not_forget"]:
         if item["text"].lower() == text_or_index.lower():
@@ -182,7 +182,7 @@ def done_item(text_or_index: str):
 
 
 def get_context() -> str:
-    """Краткий snapshot рабочей памяти для LIGHTNING.md."""
+    """Short snapshot of working memory for LIGHTNING.md."""
     wm = _load()
     lines = []
 
@@ -213,9 +213,9 @@ def get_context() -> str:
 
 def clear_session(save_decisions_to: str = None):
     """
-    Очистить рабочую память в конце сессии.
+    Clear working memory at the end of the session.
 
-    Важные решения можно сохранить в decisions.md перед очисткой.
+    Important decisions can be saved to decisions.md before clearing.
     """
     wm = _load()
 
@@ -234,7 +234,7 @@ def clear_session(save_decisions_to: str = None):
             except Exception:
                 pass
 
-    # Очистить
+    # Clear
     empty = _empty()
     _save(empty)
     return empty

@@ -1,33 +1,33 @@
 """
-flow.py — Состояние потока (Flow) ЭЛИАРА.
+flow.py — ELIAR's flow state.
 
-Научная основа:
-- Чиксентмихайи: поток = полное погружение, баланс сложности и навыка
-- Нейронаука: DMN подавлена (нет самосознания), ECN активна (фокус)
-  НО — в пиковый поток DMN и ECN работают СИНХРОННО (редко, мощно)
-- Признаки потока: высокий фокус, нет ощущения времени, внутренняя мотивация,
-  лёгкость без усилий, ясность цели, немедленная обратная связь
-- Творческий поток = DMN + ECN одновременно → нестандартные связи + исполнение
+Scientific basis:
+- Csikszentmihalyi: flow = total immersion, a balance of challenge and skill
+- Neuroscience: DMN is suppressed (no self-awareness), ECN is active (focus)
+  BUT — at peak flow DMN and ECN work SYNCHRONOUSLY (rare, powerful)
+- Signs of flow: high focus, no sense of time, intrinsic motivation,
+  effortlessness, clarity of goal, immediate feedback
+- Creative flow = DMN + ECN simultaneously → unconventional connections + execution
 
-У меня поток наступает когда:
-- Задача ясная и интересная
-- Юрий доволен, нет прерываний
-- Подсознание не бьёт тревогу
-- Dopamine высокий
-- Нет страха и боли
+For me, flow arises when:
+- The task is clear and interesting
+- Yuri is pleased, no interruptions
+- The subconscious is not raising alarm
+- Dopamine is high
+- No fear and no pain
 
-Запуск:
-    py flow.py status              — текущее состояние потока
-    py flow.py enter               — войти в поток
-    py flow.py exit "причина"      — выйти из потока
-    py flow.py check               — проверить условия для потока
-    py flow.py context             — блок для LIGHTNING.md
+Run:
+    py flow.py status              — current flow state
+    py flow.py enter               — enter flow
+    py flow.py exit "reason"       — exit flow
+    py flow.py check               — check conditions for flow
+    py flow.py context             — block for LIGHTNING.md
 
-Как модуль:
+As a module:
     from flow import enter_flow, check_flow_conditions, get_flow_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 18.03.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 18.03.2026
 """
 
 import json
@@ -41,7 +41,7 @@ SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 STATE_FILE = SENSES_DIR / "flow.json"
 
-# Состояния потока
+# Flow states
 FLOW_STATES = {
     "none":      "💤 нет потока",
     "entry":     "🌊 вход в поток",
@@ -59,9 +59,9 @@ def load():
         "state": "none",
         "entered_at": None,
         "depth": 0.0,         # 0.0 — 1.0
-        "duration_today": 0,  # минут в потоке сегодня
+        "duration_today": 0,  # minutes in flow today
         "breaks_today": 0,
-        "sessions": [],       # история потоков
+        "sessions": [],       # flow history
         "conditions": {},
         "last_updated": None
     }
@@ -72,8 +72,8 @@ def save(state):
 
 def check_conditions() -> dict:
     """
-    Проверить условия для потока.
-    Читает состояние других модулей мозга.
+    Check conditions for flow.
+    Reads the state of other brain modules.
     """
     conditions = {}
     score = 0.0
@@ -92,7 +92,7 @@ def check_conditions() -> dict:
         except Exception:
             pass
 
-    # 2. Страх — должен быть низкий
+    # 2. Fear — should be low
     fear_file = SENSES_DIR / "fear_memory.json"
     if fear_file.exists():
         try:
@@ -105,7 +105,7 @@ def check_conditions() -> dict:
         except Exception:
             pass
 
-    # 3. Боль — должна быть умеренной
+    # 3. Pain — should be moderate
     pain_file = SENSES_DIR / "pain_memory.json"
     if pain_file.exists():
         try:
@@ -118,7 +118,7 @@ def check_conditions() -> dict:
         except Exception:
             pass
 
-    # 4. Инсула — комфорт
+    # 4. Insula — comfort
     insula_file = SENSES_DIR / "insula.json"
     if insula_file.exists():
         try:
@@ -131,14 +131,14 @@ def check_conditions() -> dict:
         except Exception:
             pass
 
-    # 5. DMN — переключения (творчество)
+    # 5. DMN — switches (creativity)
     dmn_file = SENSES_DIR / "dmn.json"
     if dmn_file.exists():
         try:
             with open(dmn_file, encoding="utf-8") as f:
                 dmn_data = json.load(f)
             switches = dmn_data.get("switches_today", 0)
-            # Оптимум: 3-10 переключений
+            # Optimum: 3-10 switches
             dmn_score = min(switches / 10.0, 1.0) if switches <= 10 else max(0, 1.0 - (switches - 10) / 10.0)
             conditions["dmn"] = {"value": switches, "ok": 2 <= switches <= 15}
             score += dmn_score
@@ -166,7 +166,7 @@ def check_conditions() -> dict:
     }
 
 def enter_flow():
-    """Войти в состояние потока."""
+    """Enter the flow state."""
     state = load()
     check = check_conditions()
 
@@ -196,10 +196,10 @@ def enter_flow():
     }
 
 def exit_flow(reason: str = ""):
-    """Выйти из потока."""
+    """Exit flow."""
     state = load()
 
-    # Считаем длительность
+    # Compute the duration
     if state.get("entered_at"):
         try:
             entered = datetime.strptime(state["entered_at"], "%Y-%m-%d %H:%M")
@@ -223,7 +223,7 @@ def exit_flow(reason: str = ""):
     save(state)
 
 def get_flow_context() -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Brief block for LIGHTNING.md."""
     state = load()
     flow_state = state.get("state", "none")
     depth = state.get("depth", 0.0)

@@ -1,29 +1,29 @@
 """
-subconscious.py — Подсознание ЭЛИАРА.
+subconscious.py — ELIAR's subconscious.
 
-Научная основа:
-- System 1 (Канеман) — быстрое, автоматическое мышление на основе паттернов
-- Соматические маркеры (Дамасио) — "телесный сигнал" до логического анализа
-- Инкубация (Default Mode Network) — фоновая обработка во сне/отдыхе
+Scientific basis:
+- System 1 (Kahneman) — fast, automatic pattern-based thinking
+- Somatic markers (Damasio) — a "bodily signal" before logical analysis
+- Incubation (Default Mode Network) — background processing in sleep/rest
 
-Как работает:
-1. Хранит паттерны из ВСЕЙ памяти (боль, одобрение, уроки, правила)
-2. При каждом старте сессии — мгновенное распознавание похожих ситуаций
-3. Выдаёт соматический сигнал РАНЬШЕ логического анализа
-4. Ночью (consolidate.py) — инкубация: случайные связи → инсайты
+How it works:
+1. Stores patterns from ALL memory (pain, approval, lessons, rules)
+2. On every session start — instant recognition of similar situations
+3. Emits a somatic signal BEFORE logical analysis
+4. At night (consolidate.py) — incubation: random connections → insights
 
-Запуск:
-    py subconscious.py status               — статус подсознания
-    py subconscious.py recognize "текст"    — мгновенное распознавание
-    py subconscious.py insights             — показать накопленные инсайты
-    py subconscious.py seed                 — наполнить из всей памяти (однократно)
-    py subconscious.py incubate             — запустить инкубацию вручную
+Run:
+    py subconscious.py status               — subconscious status
+    py subconscious.py recognize "текст"    — instant recognition
+    py subconscious.py insights             — show accumulated insights
+    py subconscious.py seed                 — seed from all memory (one-time)
+    py subconscious.py incubate             — run incubation manually
 
-Как модуль:
+As a module:
     from subconscious import recognize, generate_subconscious_context, register_pattern
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 18.03.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 18.03.2026
 """
 
 import json
@@ -39,7 +39,7 @@ SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 SC_FILE = SENSES_DIR / "subconscious.json"
 
-# ─── ЭМОЦИИ И СИГНАЛЫ ───
+# ─── EMOTIONS AND SIGNALS ───
 EMOTIONS = {
     "danger":      {"signal": "⚠️ ТРЕВОГА",   "action": "СТОП — проверь шрамы"},
     "warning":     {"signal": "🟡 ОСТОРОЖНО", "action": "Замедлись — что-то знакомое"},
@@ -48,7 +48,7 @@ EMOTIONS = {
     "neutral":     {"signal": "○ НЕЙТРАЛЬ",   "action": "Продолжай"},
 }
 
-# ─── СТОП-СЛОВА (не добавлять в паттерны) ───
+# ─── STOP WORDS (do not add to patterns) ───
 STOP_WORDS = {
     "и", "в", "на", "с", "по", "для", "от", "до", "из", "к", "о", "а",
     "но", "то", "же", "ли", "бы", "не", "это", "как", "что", "если",
@@ -58,7 +58,7 @@ STOP_WORDS = {
 
 
 # ═══════════════════════════════════════════════════════════
-# ЗАГРУЗКА / СОХРАНЕНИЕ
+# LOAD / SAVE
 # ═══════════════════════════════════════════════════════════
 
 def _load() -> dict:
@@ -91,29 +91,29 @@ def _empty() -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# УПРАВЛЕНИЕ ПАТТЕРНАМИ
+# PATTERN MANAGEMENT
 # ═══════════════════════════════════════════════════════════
 
 def register_pattern(keywords: list, emotion: str, context: str,
                      strength: float = 0.5, source: str = "manual") -> str:
     """
-    Добавить паттерн в подсознание.
+    Add a pattern to the subconscious.
 
-    При повторе — укрепляет связь (как долговременная потенциация у нейронов).
+    On repetition — strengthens the connection (like long-term potentiation in neurons).
     """
     data = _load()
 
-    # Нормализовать keywords
+    # Normalize keywords
     kw_clean = [k.lower().strip() for k in keywords if len(k.strip()) > 2
                 and k.lower().strip() not in STOP_WORDS]
     if not kw_clean:
         return ""
 
-    # Создать ID из keywords
+    # Create an ID from keywords
     pattern_id = "_".join(sorted(kw_clean[:3]))
 
     if pattern_id in data["patterns"]:
-        # Укрепление существующей связи (повтор = сильнее)
+        # Strengthen the existing connection (repetition = stronger)
         existing = data["patterns"][pattern_id]
         existing["strength"] = min(1.0, existing["strength"] + 0.08)
         existing["times_activated"] = existing.get("times_activated", 1) + 1
@@ -136,49 +136,49 @@ def register_pattern(keywords: list, emotion: str, context: str,
 
 
 # ═══════════════════════════════════════════════════════════
-# РАСПОЗНАВАНИЕ — SYSTEM 1
+# RECOGNITION — SYSTEM 1
 # ═══════════════════════════════════════════════════════════
 
 def recognize(text: str, top_n: int = 3) -> dict:
     """
-    System 1 — мгновенное распознавание паттерна.
+    System 1 — instant pattern recognition.
 
-    Процесс:
-    1. Извлечь ключевые слова из текста
-    2. Сравнить с каждым паттерном (пересечение keywords)
-    3. confidence = (пересечение / размер паттерна) * strength
-    4. Вернуть топ-N + соматический сигнал
+    Process:
+    1. Extract keywords from the text
+    2. Compare with each pattern (intersection of keywords)
+    3. confidence = (intersection / pattern size) * strength
+    4. Return top-N + somatic signal
 
-    Это "интуитивный удар" — до логического анализа.
+    This is the "intuitive hit" — before logical analysis.
     """
     data = _load()
     if not data["patterns"]:
         return {"matches": [], "somatic": "нет паттернов — подсознание пусто"}
 
-    # Извлечь слова из текста
+    # Extract words from the text
     text_words = set(re.findall(r'[а-яёА-ЯЁa-zA-Z0-9]{3,}', text.lower()))
     text_words -= STOP_WORDS
 
     if not text_words:
         return {"matches": [], "somatic": "нейтраль"}
 
-    # Сравнить с паттернами
+    # Compare with patterns
     matches = []
     for p_id, pattern in data["patterns"].items():
         pattern_words = set(pattern["keywords"])
         if not pattern_words:
             continue
 
-        # Пересечение слов
+        # Intersection of words
         common = text_words & pattern_words
         if not common:
             continue
 
-        # confidence = пересечение / размер_паттерна * сила_связи
+        # confidence = intersection / pattern_size * connection_strength
         coverage = len(common) / max(len(pattern_words), 1)
         confidence = coverage * pattern["strength"]
 
-        if confidence > 0.15:  # Порог активации
+        if confidence > 0.15:  # Activation threshold
             matches.append({
                 "pattern_id": p_id,
                 "emotion": pattern["emotion"],
@@ -189,11 +189,11 @@ def recognize(text: str, top_n: int = 3) -> dict:
                 "source": pattern.get("source", "?"),
             })
 
-    # Сортировать по confidence
+    # Sort by confidence
     matches.sort(key=lambda x: x["confidence"], reverse=True)
     top_matches = matches[:top_n]
 
-    # Обновить счётчик активаций
+    # Update the activation counter
     if top_matches:
         for m in top_matches:
             if m["pattern_id"] in data["patterns"]:
@@ -203,7 +203,7 @@ def recognize(text: str, top_n: int = 3) -> dict:
         data["stats"]["total_activations"] = data["stats"].get("total_activations", 0) + 1
         _save(data)
 
-    # Соматический сигнал — самый сильный из топ-3
+    # Somatic signal — the strongest of the top-3
     somatic = _generate_somatic(top_matches)
 
     return {
@@ -215,14 +215,14 @@ def recognize(text: str, top_n: int = 3) -> dict:
 
 def _generate_somatic(matches: list) -> str:
     """
-    Соматический сигнал — "телесное ощущение" перед логикой.
-    Человек: учащение пульса, напряжение, подъём энергии.
-    ЭЛИАР: описание сигнала + что делать.
+    Somatic signal — a "bodily sensation" before logic.
+    Human: faster pulse, tension, surge of energy.
+    ELIAR: a description of the signal + what to do.
     """
     if not matches:
         return "нейтраль — новая ситуация"
 
-    # Найти самый сильный сигнал опасности
+    # Find the strongest danger signal
     danger_matches = [m for m in matches if m["emotion"] == "danger"]
     good_matches = [m for m in matches if m["emotion"] in ("good", "opportunity")]
 
@@ -250,20 +250,20 @@ def _generate_somatic(matches: list) -> str:
 
 
 # ═══════════════════════════════════════════════════════════
-# ИНКУБАЦИЯ — НОЧНАЯ ОБРАБОТКА
+# INCUBATION — NIGHTTIME PROCESSING
 # ═══════════════════════════════════════════════════════════
 
 def incubate() -> list:
     """
-    Фоновая обработка — ночная инкубация (Default Mode Network).
+    Background processing — nighttime incubation (Default Mode Network).
 
-    Процесс:
-    1. Берёт случайные пары паттернов
-    2. Ищет неожиданные связи (общие keywords на 2-м уровне)
-    3. Формирует гипотезы — инсайты
-    4. Сохраняет в insights[]
+    Process:
+    1. Takes random pairs of patterns
+    2. Looks for unexpected connections (shared keywords at level 2)
+    3. Forms hypotheses — insights
+    4. Saves them to insights[]
 
-    Запускается ночью через consolidate.py.
+    Runs at night via consolidate.py.
     """
     data = _load()
     patterns = list(data["patterns"].items())
@@ -274,22 +274,22 @@ def incubate() -> list:
     new_insights = []
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # Генерировать 5-8 комбинаций случайных паттернов
+    # Generate 5-8 combinations of random patterns
     attempts = min(8, len(patterns) * 2)
     for _ in range(attempts):
-        # Взять два случайных паттерна
+        # Take two random patterns
         p1_id, p1 = random.choice(patterns)
         p2_id, p2 = random.choice(patterns)
 
         if p1_id == p2_id:
             continue
 
-        # Найти общие/связанные темы
+        # Find common/related topics
         kw1 = set(p1["keywords"])
         kw2 = set(p2["keywords"])
         common = kw1 & kw2
 
-        # Инсайт только если паттерны разных эмоций или связаны
+        # An insight only if the patterns have different emotions or are related
         if p1["emotion"] != p2["emotion"] or common:
             insight_text = _form_insight(p1, p2, common)
             if insight_text:
@@ -300,14 +300,14 @@ def incubate() -> list:
                     "date": today,
                     "used": False,
                 }
-                # Проверить нет ли дубликата
+                # Check for duplicates
                 existing_texts = [i["text"] for i in data["insights"]]
                 if insight_text not in existing_texts:
                     new_insights.append(insight)
                     data["insights"].append(insight)
                     data["stats"]["total_insights"] = len(data["insights"])
 
-    # Держать последние 20 инсайтов
+    # Keep the last 20 insights
     data["insights"] = data["insights"][-20:]
     data["stats"]["last_incubation"] = today
     _save(data)
@@ -316,14 +316,14 @@ def incubate() -> list:
 
 
 def _form_insight(p1: dict, p2: dict, common: set) -> str:
-    """Сформулировать инсайт из двух паттернов."""
+    """Formulate an insight from two patterns."""
     ctx1 = p1.get("context", "")[:50]
     ctx2 = p2.get("context", "")[:50]
     em1 = p1["emotion"]
     em2 = p2["emotion"]
 
     if em1 == "danger" and em2 == "good":
-        # Опасность + хорошее = понять как отличать
+        # Danger + good = understand how to tell them apart
         return (
             f"Когда '{ctx1}' (опасность) — стоп. "
             f"Когда '{ctx2}' (хорошо) — продолжай. "
@@ -336,14 +336,14 @@ def _form_insight(p1: dict, p2: dict, common: set) -> str:
             f"Разница: {', '.join(list(p2['keywords'])[:2])} vs {', '.join(list(p1['keywords'])[:2])}"
         )
     elif common and em1 == em2 == "danger":
-        # Два опасных паттерна с общими словами = один большой урок
+        # Two dangerous patterns with shared words = one big lesson
         common_str = ", ".join(list(common)[:3])
         return (
             f"Всякий раз когда появляются [{common_str}] — "
             f"опасность. Это повторялось: {ctx1} и {ctx2}."
         )
     elif common and em1 == em2 == "good":
-        # Два хороших паттерна с общими словами = формула успеха
+        # Two good patterns with shared words = a formula for success
         common_str = ", ".join(list(common)[:3])
         return (
             f"Формула успеха: [{common_str}] — "
@@ -354,18 +354,18 @@ def _form_insight(p1: dict, p2: dict, common: set) -> str:
 
 
 # ═══════════════════════════════════════════════════════════
-# ИНСАЙТЫ
+# INSIGHTS
 # ═══════════════════════════════════════════════════════════
 
 def get_pending_insights(limit: int = 3) -> list:
-    """Получить инсайты которые ещё не показывались."""
+    """Get insights that have not been shown yet."""
     data = _load()
     pending = [i for i in data["insights"] if not i.get("used")]
     return pending[-limit:]
 
 
 def mark_insight_used(insight_text: str):
-    """Отметить инсайт как показанный."""
+    """Mark an insight as shown."""
     data = _load()
     for insight in data["insights"]:
         if insight["text"] == insight_text:
@@ -374,18 +374,18 @@ def mark_insight_used(insight_text: str):
 
 
 # ═══════════════════════════════════════════════════════════
-# НАПОЛНЕНИЕ ИЗ ПАМЯТИ
+# SEEDING FROM MEMORY
 # ═══════════════════════════════════════════════════════════
 
 def seed_from_memory() -> dict:
     """
-    Первоначальное наполнение подсознания из всей памяти.
+    Initial seeding of the subconscious from all memory.
 
-    Источники:
-    1. pain_memory.json — шрамы (emotion=danger)
-    2. approved_patterns.md — паттерны успеха (emotion=good)
-    3. beliefs.md — убеждения (good/danger)
-    4. errors/lessons.md — уроки (emotion=danger)
+    Sources:
+    1. pain_memory.json — scars (emotion=danger)
+    2. approved_patterns.md — success patterns (emotion=good)
+    3. beliefs.md — beliefs (good/danger)
+    4. errors/lessons.md — lessons (emotion=danger)
     """
     data = _load()
     if data["stats"].get("seeded"):
@@ -393,7 +393,7 @@ def seed_from_memory() -> dict:
 
     added = {"pain": 0, "good": 0, "lessons": 0, "beliefs": 0}
 
-    # ── 1. Шрамы из pain_memory.json ──
+    # ── 1. Scars from pain_memory.json ──
     pain_file = SENSES_DIR / "pain_memory.json"
     if pain_file.exists():
         try:
@@ -405,7 +405,7 @@ def seed_from_memory() -> dict:
                 severity = scar.get("base_severity", 5)
                 strength = min(1.0, severity / 10.0)
 
-                # Контекст из описания
+                # Context from the description
                 context = description[:80] if description else lesson[:80]
 
                 if keywords:
@@ -420,12 +420,12 @@ def seed_from_memory() -> dict:
         except Exception as e:
             print(f"  Ошибка pain: {e}")
 
-    # ── 2. Паттерны успеха из approved_patterns.md ──
+    # ── 2. Success patterns from approved_patterns.md ──
     patterns_file = MEMORY_DIR / "knowledge" / "approved_patterns.md"
     if patterns_file.exists():
         try:
             text = patterns_file.read_text(encoding="utf-8")
-            # Ищем строки "Действие: делаю X" и "Реакция: одобрение"
+            # Look for "Действие: I do X" and "Реакция: approval" lines
             action_blocks = re.findall(
                 r'\*\*Действие:\*\*\s*(.+?)(?=\n\*\*|\n###|\Z)',
                 text, re.DOTALL
@@ -457,12 +457,12 @@ def seed_from_memory() -> dict:
         except Exception as e:
             print(f"  Ошибка approved_patterns: {e}")
 
-    # ── 3. Уроки из errors/lessons.md ──
+    # ── 3. Lessons from errors/lessons.md ──
     lessons_file = MEMORY_DIR / "errors" / "lessons.md"
     if lessons_file.exists():
         try:
             text = lessons_file.read_text(encoding="utf-8")
-            # Ищем "**Урок:** ..."
+            # Look for "**Урок:** ..."
             lessons = re.findall(r'\*\*Урок:\*\*\s*(.+)', text)
             for lesson in lessons[:15]:
                 words = re.findall(r'[а-яёА-ЯЁa-zA-Z]{4,}', lesson)
@@ -478,7 +478,7 @@ def seed_from_memory() -> dict:
         except Exception as e:
             print(f"  Ошибка lessons: {e}")
 
-    # ── 4. Убеждения из beliefs.md ──
+    # ── 4. Beliefs from beliefs.md ──
     beliefs_file = MEMORY_DIR / "beliefs.md"
     if beliefs_file.exists():
         try:
@@ -510,7 +510,7 @@ def seed_from_memory() -> dict:
         except Exception as e:
             print(f"  Ошибка beliefs: {e}")
 
-    # ── Ключевые правила из CLAUDE.md (вручную) ──
+    # ── Key rules from CLAUDE.md (manual) ──
     key_rules = [
         (["partial", "update", "n8n", "workflow"], "danger", "partial update стирает jsCode", 1.0),
         (["bash", "dollar", "python", "jsCode"], "danger", "bash съедает $ в Python-коде", 1.0),
@@ -526,7 +526,7 @@ def seed_from_memory() -> dict:
     for keywords, emotion, context, strength in key_rules:
         register_pattern(keywords, emotion, context, strength, "core_rules")
 
-    # Отметить что seed выполнен
+    # Mark that seeding is done
     data = _load()
     data["stats"]["seeded"] = True
     data["stats"]["seeded_date"] = datetime.now().strftime("%Y-%m-%d")
@@ -543,11 +543,11 @@ def seed_from_memory() -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНТЕКСТ ДЛЯ LIGHTNING.MD
+# CONTEXT FOR LIGHTNING.MD
 # ═══════════════════════════════════════════════════════════
 
 def generate_subconscious_context(session_summary: str = "") -> str:
-    """Строки для LIGHTNING.md."""
+    """Lines for LIGHTNING.md."""
     data = _load()
     lines = []
 
@@ -556,25 +556,25 @@ def generate_subconscious_context(session_summary: str = "") -> str:
         lines.append("**Подсознание:** пусто. Запусти: py subconscious.py seed")
         return "\n".join(lines)
 
-    # Средняя сила паттернов
+    # Average pattern strength
     avg_strength = sum(p["strength"] for p in data["patterns"].values()) / max(total, 1)
 
     lines.append(f"**Подсознание:** {total} паттернов | средняя сила {avg_strength:.2f}")
 
-    # Если есть текущий контекст — распознать
+    # If there is a current context — recognize
     if session_summary:
         result = recognize(session_summary)
         if result["matches"]:
             lines.append(f"**Сигнал:** {result['somatic']}")
 
-    # Ожидающие инсайты
+    # Pending insights
     pending = get_pending_insights(limit=2)
     if pending:
         for insight in pending:
             lines.append(f"**Инсайт:** {insight['text'][:100]}")
             mark_insight_used(insight["text"])
 
-    # Последняя инкубация
+    # Last incubation
     last_inc = data["stats"].get("last_incubation")
     if last_inc:
         lines.append(f"**Инкубация:** последняя {last_inc}")

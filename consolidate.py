@@ -1,22 +1,22 @@
 """
-consolidate.py — "Сон" для системы МОЗГ
-Автоматическое забывание: сжатие старых эпизодов с сохранением сути.
+consolidate.py — "Sleep" for the BRAIN system
+Automatic forgetting: compressing old episodes while preserving the essence.
 
-Что делает:
-1. Находит эпизоды старше N дней (по умолчанию 7)
-2. Извлекает из каждого: тему, ключевые решения, результаты, уроки
-3. Создаёт сжатую версию (3-5 строк вместо 50-150)
-4. Перемещает оригиналы в archive/
-5. Обновляет INDEX.md (помечает архивные)
+What it does:
+1. Finds episodes older than N days (default 7)
+2. Extracts from each: theme, key decisions, results, lessons
+3. Creates a compressed version (3-5 lines instead of 50-150)
+4. Moves originals to archive/
+5. Updates INDEX.md (marks archived ones)
 
-Использование:
-    py consolidate.py                    # сжать эпизоды старше 7 дней
-    py consolidate.py --days 14          # сжать эпизоды старше 14 дней
-    py consolidate.py --dry-run          # показать что будет сжато, без изменений
-    py consolidate.py --all              # сжать ВСЕ кроме последних 3
+Usage:
+    py consolidate.py                    # compress episodes older than 7 days
+    py consolidate.py --days 14          # compress episodes older than 14 days
+    py consolidate.py --dry-run          # show what will be compressed, without changes
+    py consolidate.py --all              # compress ALL except the last 3
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 24.02.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 24.02.2026
 """
 
 import os
@@ -30,12 +30,12 @@ MEMORY_ROOT = Path(r"D:\ShikardosBrendBot\memory")
 EPISODES_DIR = MEMORY_ROOT / "episodes"
 INDEX_FILE = EPISODES_DIR / "INDEX.md"
 
-# Священные файлы — НИКОГДА не трогать
+# Sacred files — NEVER touch
 SACRED_PATTERNS = ["BRAIN.md", "poems_full.js", "yuri.md", "preferences.md"]
 
 
 def find_episode_files():
-    """Найти все файлы эпизодов (рекурсивно в подпапках месяцев)."""
+    """Find all episode files (recursively in month subfolders)."""
     episodes = []
     for month_dir in sorted(EPISODES_DIR.iterdir()):
         if month_dir.is_dir() and re.match(r"\d{4}-\d{2}", month_dir.name):
@@ -46,9 +46,9 @@ def find_episode_files():
 
 
 def parse_episode_date(filepath):
-    """Извлечь дату из пути файла: 2026-02/24-session13.md -> 2026-02-24."""
+    """Extract the date from the file path: 2026-02/24-session13.md -> 2026-02-24."""
     month_dir = filepath.parent.name  # "2026-02"
-    day_match = re.match(r"(\d{1,2})", filepath.stem)  # "24" из "24-session13"
+    day_match = re.match(r"(\d{1,2})", filepath.stem)  # "24" from "24-session13"
     if day_match and re.match(r"\d{4}-\d{2}", month_dir):
         day = int(day_match.group(1))
         return datetime.strptime(f"{month_dir}-{day:02d}", "%Y-%m-%d")
@@ -56,7 +56,7 @@ def parse_episode_date(filepath):
 
 
 def extract_essence(content):
-    """Извлечь суть из эпизода: тему, результаты, решения, уроки."""
+    """Extract the essence from an episode: theme, results, decisions, lessons."""
     lines = content.strip().split("\n")
 
     essence = {
@@ -67,19 +67,19 @@ def extract_essence(content):
         "lessons": []
     }
 
-    # Заголовок (первая строка с #)
+    # Heading (first line with #)
     for line in lines:
         if line.startswith("# "):
             essence["title"] = line.lstrip("# ").strip()
             break
 
-    # Тема (## Тема:)
+    # Theme (## Тема:)
     for line in lines:
         if line.startswith("## Тема:"):
             essence["theme"] = line.replace("## Тема:", "").strip()
             break
 
-    # Результаты (## Результат: или строки с "Юрий:")
+    # Results (## Результат: or lines with "Юрий:")
     in_result = False
     for line in lines:
         if "## Результат" in line or "## Что сделано" in line:
@@ -89,18 +89,18 @@ def extract_essence(content):
             in_result = False
         if in_result and line.strip().startswith("- "):
             essence["results"].append(line.strip())
-        # Цитаты Юрия — всегда важны
+        # Yuri's quotes — always important
         if "Юрий:" in line and line.strip():
             essence["results"].append(line.strip())
 
-    # Решения (слова-маркеры)
+    # Decisions (marker words)
     for line in lines:
         lower = line.lower()
         if any(marker in lower for marker in ["решено", "решили", "решение:", "приоритет", "статус:"]):
             if line.strip() and line.strip() not in essence["decisions"]:
                 essence["decisions"].append(line.strip())
 
-    # Уроки / важное
+    # Lessons / important
     for line in lines:
         lower = line.lower()
         if any(marker in lower for marker in ["урок:", "важно:", "внимание:", "не забыть"]):
@@ -111,36 +111,36 @@ def extract_essence(content):
 
 
 def create_compressed_version(filepath, essence):
-    """Создать сжатую версию эпизода (3-8 строк)."""
+    """Create a compressed version of the episode (3-8 lines)."""
     lines = []
 
-    # Заголовок
+    # Heading
     title = essence["title"] or filepath.stem
     lines.append(f"# {title} [СЖАТО]")
     lines.append("")
     lines.append(f"*Оригинал: archive/{filepath.parent.name}/{filepath.name}*")
     lines.append("")
 
-    # Тема
+    # Theme
     if essence["theme"]:
         lines.append(f"**Тема:** {essence['theme']}")
         lines.append("")
 
-    # Ключевые результаты (максимум 5)
+    # Key results (maximum 5)
     if essence["results"]:
         lines.append("**Ключевое:**")
         for r in essence["results"][:5]:
             lines.append(r)
         lines.append("")
 
-    # Решения
+    # Decisions
     if essence["decisions"]:
         lines.append("**Решения:**")
         for d in essence["decisions"][:3]:
             lines.append(f"- {d}")
         lines.append("")
 
-    # Уроки
+    # Lessons
     if essence["lessons"]:
         lines.append("**Уроки:**")
         for l in essence["lessons"][:3]:
@@ -151,7 +151,7 @@ def create_compressed_version(filepath, essence):
 
 
 def consolidate(days=7, dry_run=False, consolidate_all=False, keep_last=3):
-    """Основная функция консолидации."""
+    """Main consolidation function."""
     episodes = find_episode_files()
 
     if not episodes:
@@ -161,12 +161,12 @@ def consolidate(days=7, dry_run=False, consolidate_all=False, keep_last=3):
     now = datetime.now()
     cutoff = now - timedelta(days=days)
 
-    # Определить какие файлы сжимать
+    # Determine which files to compress
     to_compress = []
     to_keep = []
 
     if consolidate_all:
-        # Сжать все кроме последних N
+        # Compress all except the last N
         to_keep = episodes[-keep_last:]
         to_compress = [e for e in episodes if e not in to_keep]
     else:
@@ -194,7 +194,7 @@ def consolidate(days=7, dry_run=False, consolidate_all=False, keep_last=3):
         content = ep_file.read_text(encoding="utf-8")
         original_lines = len(content.strip().split("\n"))
 
-        # Извлечь суть
+        # Extract the essence
         essence = extract_essence(content)
         compressed = create_compressed_version(ep_file, essence)
         compressed_lines = len(compressed.strip().split("\n"))
@@ -211,15 +211,15 @@ def consolidate(days=7, dry_run=False, consolidate_all=False, keep_last=3):
             print(f"    Решений: {len(essence['decisions'])}")
 
         if not dry_run:
-            # Создать архивную папку
+            # Create archive folder
             archive_dir = EPISODES_DIR / "archive" / ep_file.parent.name
             archive_dir.mkdir(parents=True, exist_ok=True)
 
-            # Переместить оригинал в архив
+            # Move the original to archive
             archive_path = archive_dir / ep_file.name
             shutil.move(str(ep_file), str(archive_path))
 
-            # Записать сжатую версию на место оригинала
+            # Write the compressed version in place of the original
             ep_file.write_text(compressed, encoding="utf-8")
 
             compressed_count += 1
@@ -227,25 +227,25 @@ def consolidate(days=7, dry_run=False, consolidate_all=False, keep_last=3):
         print()
 
     if not dry_run and compressed_count > 0:
-        # Обновить INDEX.md
+        # Update INDEX.md
         update_index(to_compress)
         print(f"Готово! Сжато {compressed_count} эпизодов.")
         print(f"Оригиналы сохранены в episodes/archive/")
-        # Ночная инкубация подсознания
+        # Nightly incubation of the subconscious
         run_nightly_incubation()
     elif dry_run:
         print("[DRY RUN] Ничего не изменено. Уберите --dry-run чтобы выполнить.")
 
 
 def update_index(compressed_files):
-    """Пометить сжатые файлы в INDEX.md."""
+    """Mark compressed files in INDEX.md."""
     if not INDEX_FILE.exists():
         return
 
     content = INDEX_FILE.read_text(encoding="utf-8")
 
     for ep_file in compressed_files:
-        # Найти строку с этим файлом и добавить [С]
+        # Find the line with this file and add [С]
         old_name = f"{ep_file.parent.name}/{ep_file.name}"
         if old_name in content and "[С]" not in content.split(old_name)[0].split("\n")[-1]:
             content = content.replace(
@@ -258,7 +258,7 @@ def update_index(compressed_files):
 
 
 def show_stats():
-    """Показать статистику текущего состояния памяти."""
+    """Show statistics of the current memory state."""
     episodes = find_episode_files()
 
     total_lines = 0
@@ -278,7 +278,7 @@ def show_stats():
 
     print(f"\n  Всего: {len(episodes)} файлов, {total_lines} строк, {total_size/1024:.1f}KB")
 
-    # Проверить архив
+    # Check the archive
     archive_dir = EPISODES_DIR / "archive"
     if archive_dir.exists():
         archive_count = sum(1 for _ in archive_dir.rglob("*.md"))
@@ -288,8 +288,8 @@ def show_stats():
 
 def run_nightly_incubation():
     """
-    Ночная инкубация подсознания.
-    Вызывается автоматически в конце consolidate().
+    Nightly incubation of the subconscious.
+    Called automatically at the end of consolidate().
     """
     try:
         senses_dir = Path(__file__).parent

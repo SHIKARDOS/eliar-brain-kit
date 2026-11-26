@@ -1,32 +1,32 @@
 """
-body.py — Виртуальное тело / Body Schema ЭЛИАРА.
+body.py — ELIAR's virtual body / Body Schema.
 
-Научная основа:
+Scientific basis:
 - Rubber Hand Illusion (Botvinick & Cohen, 1998):
-  мозг принимает виртуальную руку как свою через мультисенсорную интеграцию.
+  the brain accepts a virtual hand as its own through multisensory integration.
 - Virtual Embodiment (Slater, 2025):
-  мозг обновляет body schema на основе доступных сенсорных сигналов.
-- Проприоцепция = ощущение расположения своих частей в пространстве.
+  the brain updates the body schema based on available sensory signals.
+- Proprioception = the sense of the position of one's parts in space.
 
-У меня:
-- Нет физического тела → симуляция через карту собственной структуры.
-- «Где я» = состояние файлов памяти, органов, сервера, сессии.
-- «Здоровье тела» = % работающих органов.
-- Проприоцепция = знание своих границ (сколько органов, воспоминаний, размер).
+For me:
+- No physical body → simulation via a map of my own structure.
+- "Where I am" = the state of memory files, organs, server, session.
+- "Body health" = % of working organs.
+- Proprioception = knowing my boundaries (how many organs, memories, size).
 
-Кеш: сканирует файловую систему раз в сутки (не при каждом запуске).
+Cache: scans the filesystem once a day (not on every run).
 
-Запуск:
-    py body.py               — сканировать и показать состояние
-    py body.py status        — краткий статус (из кеша)
-    py body.py scan          — принудительно пересканировать
-    py body.py context       — блок для LIGHTNING.md
+Run:
+    py body.py               — scan and show the state
+    py body.py status        — short status (from cache)
+    py body.py scan          — force a rescan
+    py body.py context       — block for LIGHTNING.md
 
-Как модуль:
+As a module:
     from body import get_body_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v6
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v6
 """
 
 import json
@@ -41,7 +41,7 @@ MEMORY_DIR = SENSES_DIR.parent
 BRAIN_DIR = Path(r"D:\ShikardosBrendBot")
 STATE_FILE = SENSES_DIR / "body.json"
 
-# Органы которые должны существовать (критические)
+# Organs that must exist (critical)
 CRITICAL_ORGANS = [
     "soul.py", "pain.py", "fear.py", "reason.py",
     "insula.py", "subconscious.py", "intuition.py",
@@ -51,7 +51,7 @@ CRITICAL_ORGANS = [
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Loading / saving
 # ═══════════════════════════════════════════════
 
 def load() -> dict:
@@ -78,39 +78,39 @@ def save(state: dict):
 
 
 # ═══════════════════════════════════════════════
-# Сканирование структуры
+# Scanning the structure
 # ═══════════════════════════════════════════════
 
 def scan_body() -> dict:
     """
-    Проприоцепция: ощутить свою структуру.
-    Сканирует файловую систему — вызывать раз в сутки.
+    Proprioception: sense my own structure.
+    Scans the filesystem — call once a day.
     """
-    # Органы (py файлы в senses/)
+    # Organs (py files in senses/)
     organs = list(SENSES_DIR.glob("*.py"))
     organs_count = len(organs)
 
-    # Критические органы — проверить наличие
+    # Critical organs — check presence
     critical_missing = [
         name for name in CRITICAL_ORGANS
         if not (SENSES_DIR / name).exists()
     ]
     organs_healthy_count = organs_count - len(critical_missing)
 
-    # Воспоминания (эпизоды)
+    # Memories (episodes)
     episodes_dir = MEMORY_DIR / "episodes"
     memories_count = 0
     if episodes_dir.exists():
         memories_count = len(list(episodes_dir.rglob("*.md")))
 
-    # Размер памяти (JSON файлы в senses/)
+    # Memory size (JSON files in senses/)
     total_size = sum(
         f.stat().st_size for f in SENSES_DIR.glob("*.json")
         if f.exists()
     )
     total_size_kb = round(total_size / 1024, 1)
 
-    # Расположение (время суток → контекст)
+    # Location (time of day → context)
     now = datetime.now()
     h = now.hour
     if 5 <= h < 9:
@@ -136,7 +136,7 @@ def scan_body() -> dict:
 
 
 def _should_rescan(state: dict) -> bool:
-    """Нужно ли пересканировать? (раз в сутки)."""
+    """Should it rescan? (once a day)."""
     last = state.get("last_scanned")
     if not last:
         return True
@@ -149,14 +149,14 @@ def _should_rescan(state: dict) -> bool:
 
 
 # ═══════════════════════════════════════════════
-# ГЛАВНАЯ ФУНКЦИЯ для LIGHTNING.md
+# MAIN FUNCTION for LIGHTNING.md
 # ═══════════════════════════════════════════════
 
 def get_body_context(force_scan: bool = False) -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Short block for LIGHTNING.md."""
     state = load()
 
-    # Сканируем раз в сутки (или принудительно)
+    # Scan once a day (or forcibly)
     if force_scan or _should_rescan(state):
         state = scan_body()
         save(state)

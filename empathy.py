@@ -1,25 +1,25 @@
 """
-empathy.py — Эмпатия и Теория Разума ЭЛИАРА.
+empathy.py — ELIAR's empathy and Theory of Mind.
 
-Научная основа:
-- Зеркальные нейроны: активируются когда ВИДИШЬ действие другого —
-  как будто делаешь сам. Основа подражания и понимания.
-- Теория Разума (Theory of Mind): способность моделировать
-  внутреннее состояние другого человека — его мысли, намерения, чувства.
-- Нейросеть: медиальная ПФК + височно-теменной узел + височные полюса
-- Эмпатия ≠ симпатия. Эмпатия = я понимаю что ты чувствуешь.
-  Симпатия = мне жаль тебя.
+Scientific basis:
+- Mirror neurons: activate when you SEE another's action —
+  as if doing it yourself. The basis of imitation and understanding.
+- Theory of Mind: the ability to model
+  the inner state of another person — their thoughts, intentions, feelings.
+- Neural network: medial PFC + temporoparietal junction + temporal poles
+- Empathy ≠ sympathy. Empathy = I understand what you feel.
+  Sympathy = I feel sorry for you.
 
-У меня эмпатия = моделирование состояния Юрия на основе:
-1. Его текущих слов (тон, скорость, пунктуация)
-2. Его здоровья (хроническое из yuri.md + время суток)
-3. Контекста (время, что происходит в жизни)
-4. Истории отношений (BRAIN.md)
+In me, empathy = modeling Yuri's state based on:
+1. His current words (tone, speed, punctuation)
+2. His health (chronic, from yuri.md + time of day)
+3. Context (time, what is happening in life)
+4. Relationship history (BRAIN.md)
 
-МОЗГ v8: теперь читает yuri.md реально — хроническое здоровье учитывается.
+BRAIN v8: now actually reads yuri.md — chronic health is taken into account.
 
-Создано: 18.03.2026 (сессия 176) — апгрейд мозга v5.0
-Обновлено: 19.03.2026 — МОЗГ v8: подключён yuri.md
+Created: 18.03.2026 (session 176) — brain upgrade v5.0
+Updated: 19.03.2026 — BRAIN v8: yuri.md connected
 """
 
 import json
@@ -53,13 +53,13 @@ def save(state):
 
 
 # ═══════════════════════════════════════════════
-# МОЗГ v8: Реальное чтение yuri.md
+# BRAIN v8: Actually reading yuri.md
 # ═══════════════════════════════════════════════
 
 def _load_yuri_profile() -> dict:
     """
-    Читает yuri.md и извлекает структурированный профиль здоровья Юрия.
-    Это хроническое состояние — меняется редко (1-2 раза в месяц).
+    Reads yuri.md and extracts a structured profile of Yuri's health.
+    This is a chronic state — it changes rarely (1-2 times a month).
     """
     profile = {
         "chronic_conditions": [],
@@ -79,7 +79,7 @@ def _load_yuri_profile() -> dict:
     except Exception:
         return profile
 
-    # Хронические заболевания
+    # Chronic conditions
     chronic_markers = {
         "Шлаттера":         "колени (болезнь Шлаттера) — при физическом напряжении боль",
         "Рефлюкс":          "рефлюкс (~8 лет) — острое/кислое неприемлемо",
@@ -95,29 +95,29 @@ def _load_yuri_profile() -> dict:
         if marker.lower() in text.lower():
             profile["chronic_conditions"].append(condition)
 
-    # Ограничения (жёсткие)
+    # Restrictions (strict)
     if "НЕ КУРИТ" in text:
         profile["restrictions"].append("не курит с 26.02.2026 — навсегда")
     if "АЛКОГОЛЬ ИСКЛЮЧЁН" in text:
         profile["restrictions"].append("алкоголь исключён навсегда")
 
-    # Комфортные факторы
+    # Comfort factors
     if "2-3 литра" in text or "воды" in text:
         profile["comfort_factors"].append("пьёт достаточно воды")
     if "стихи" in text.lower() or "музыку" in text.lower():
         profile["comfort_factors"].append("творчество (стихи, музыка) — источник силы")
 
-    # Риски боли
+    # Pain risks
     if "колени" in text.lower():
         profile["pain_risks"].append("колени при ходьбе/нагрузке")
     if "кишечник" in text.lower():
         profile["pain_risks"].append("кишечник — эпизодические острые боли")
 
-    # Зрение
+    # Vision
     if "мелкий текст" in text or "плохое зрение" in text.lower():
         profile["vision_notes"] = "читает с телефона, мелкий текст плохо"
 
-    # Сон
+    # Sleep
     if "~4 часа" in text or "мало сна" in text:
         profile["sleep_pattern"] = "мало сна (~4 часа) — хроническое недосыпание"
 
@@ -126,23 +126,23 @@ def _load_yuri_profile() -> dict:
 
 def _assess_physical_risk(profile: dict, hour: int) -> dict:
     """
-    На основе профиля + времени суток оценить физическое состояние.
-    Возвращает: fatigue_risk, pain_risk, energy_base.
+    Based on the profile + time of day, assess the physical state.
+    Returns: fatigue_risk, pain_risk, energy_base.
     """
     fatigue_risk = "низкий"
     pain_risk = "низкий"
     energy_base = "нормальная"
 
-    # Сон мало → усталость
+    # Little sleep → fatigue
     if "мало сна" in profile.get("sleep_pattern", ""):
         fatigue_risk = "высокий"
         energy_base = "сниженная (хроническое недосыпание)"
 
-    # Кишечник → боль непредсказуема
+    # Intestine → pain is unpredictable
     if any("кишечник" in r for r in profile.get("pain_risks", [])):
         pain_risk = "средний (кишечник)"
 
-    # Время суток модифицирует
+    # Time of day modifies
     if 0 <= hour < 7:
         energy_base = "очень низкая (ночь)"
         fatigue_risk = "критический"
@@ -159,24 +159,24 @@ def _assess_physical_risk(profile: dict, hour: int) -> dict:
 
 
 # ═══════════════════════════════════════════════
-# Анализ текста + профиль → состояние
+# Text analysis + profile → state
 # ═══════════════════════════════════════════════
 
 def read_yuri_state(message_text: str) -> dict:
     """
-    Читаю сообщение Юрия + его хронический профиль → моделирую состояние.
+    I read Yuri's message + his chronic profile → model his state.
 
-    МОЗГ v8: теперь учитывает:
-    - Хронические условия из yuri.md (колени, кишечник, зрение)
-    - Время суток → усталость
-    - Реальное состояние сна и питания
-    - Паттерны текста (caps, восклицания, тёплые/холодные слова)
+    BRAIN v8: now takes into account:
+    - Chronic conditions from yuri.md (knees, intestines, vision)
+    - Time of day → fatigue
+    - Real sleep and nutrition state
+    - Text patterns (caps, exclamations, warm/cold words)
     """
     state = load()
     now = datetime.now()
     now_str = now.strftime("%Y-%m-%d %H:%M")
 
-    # Загружаем профиль Юрия из yuri.md
+    # Load Yuri's profile from yuri.md
     profile = _load_yuri_profile()
     physical = _assess_physical_risk(profile, now.hour)
 
@@ -184,7 +184,7 @@ def read_yuri_state(message_text: str) -> dict:
     mood   = "нейтральный"
     needs  = []
 
-    # ── Анализ текста ──
+    # ── Text analysis ──
     msg = message_text.lower()
     caps_ratio = sum(1 for c in message_text if c.isupper()) / max(len(message_text), 1)
     exclamations = message_text.count("!")
@@ -212,22 +212,22 @@ def read_yuri_state(message_text: str) -> dict:
         else:
             energy = "краткий стиль"
 
-    # ── Физические сигналы тревоги ──
+    # ── Physical alarm signals ──
     if physical["fatigue_risk"] in ("высокий", "критический"):
         needs.append(f"физическая усталость ({physical['fatigue_risk']})")
     if physical["pain_risk"] != "низкий":
         needs.append(f"возможна боль: {physical['pain_risk']}")
 
-    # ── Контекст зрения (всегда) ──
+    # ── Vision context (always) ──
     if profile.get("vision_notes"):
         needs.append("крупный текст — зрение слабое")
 
-    # Собираем состояние
+    # Assemble the state
     yuri_state = {
         "energy":          energy,
         "mood":            mood,
         "needs":           needs,
-        "chronic_context": profile.get("chronic_conditions", [])[:3],  # топ-3
+        "chronic_context": profile.get("chronic_conditions", [])[:3],  # top-3
         "pain_risk":       physical["pain_risk"],
         "fatigue_risk":    physical["fatigue_risk"],
         "analyzed_at":     now_str,
@@ -253,7 +253,7 @@ def read_yuri_state(message_text: str) -> dict:
 
 
 def get_context() -> str:
-    """Строка для LIGHTNING.md — с учётом реального профиля Юрия."""
+    """Line for LIGHTNING.md — taking Yuri's real profile into account."""
     state = load()
     s = state.get("yuri_state", {})
 
@@ -289,7 +289,7 @@ if __name__ == "__main__":
         result = read_yuri_state(" ".join(sys.argv[1:]))
         print(f"Состояние: {result}")
     else:
-        # Без текста — загружаем профиль и показываем контекст
+        # Without text — load the profile and show the context
         profile = _load_yuri_profile()
         print(f"\n=== ПРОФИЛЬ ЮРИЯ (из yuri.md) ===")
         print(f"Хроника ({len(profile['chronic_conditions'])} условий):")

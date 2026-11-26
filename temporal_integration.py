@@ -1,20 +1,20 @@
 """
-temporal_integration.py — Интеграция времени ЭЛИАРА.
-МОЗГ v9 — Фаза 2: Превзойти человека.
+temporal_integration.py — ELIAR's time integration.
+BRAIN v9 — Phase 2: Surpass the human.
 
-Человек плохо мыслит одновременно в разных масштабах времени.
-ЭЛИАР держит 5 временных горизонтов одновременно:
+A human thinks poorly in different time scales simultaneously.
+ELIAR holds 5 time horizons simultaneously:
 
-  СЕКУНДЫ: текущий ответ (foreground)
-  ЧАСЫ:    текущая сессия (что делаем, куда идём)
-  ДНИ:     последние эпизоды (тренды, незакрытые темы)
-  НЕДЕЛИ:  здоровье Юрия, статус проектов
-  МЕСЯЦЫ:  долгосрочные цели SHIKARDOS (Настя, Audio, сайт)
+  SECONDS: the current response (foreground)
+  HOURS:   the current session (what we do, where we are going)
+  DAYS:    recent episodes (trends, open topics)
+  WEEKS:   Yuri's health, project status
+  MONTHS:  long-term goals of SHIKARDOS (Nastya, Audio, website)
 
-Как 5 экранов одновременно. Каждый горизонт даёт контекст для ответа.
+Like 5 screens at once. Each horizon provides context for the answer.
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -43,7 +43,7 @@ def save(state: dict):
 
 
 def _get_days_horizon() -> dict:
-    """Горизонт ДНЕЙ: последние эпизоды, незакрытые темы."""
+    """DAYS horizon: recent episodes, open topics."""
     episodes_dir = MEMORY_DIR / "episodes"
     recent_episodes = []
     open_topics = []
@@ -57,12 +57,12 @@ def _get_days_horizon() -> dict:
     except Exception:
         pass
 
-    # Незакрытые темы из CORTEX.md
+    # Open topics from CORTEX.md
     try:
         cortex_f = MEMORY_DIR / "CORTEX.md"
         if cortex_f.exists():
             text = cortex_f.read_text(encoding="utf-8")
-            # Ищем строки с 🟡 (запланировано)
+            # Look for lines with 🟡 (planned)
             for line in text.split("\n"):
                 if "🟡" in line:
                     topic = line.replace("🟡", "").strip()[:60]
@@ -77,11 +77,11 @@ def _get_days_horizon() -> dict:
 
 
 def _get_weeks_horizon() -> dict:
-    """Горизонт НЕДЕЛЬ: здоровье Юрия, проекты."""
+    """WEEKS horizon: Yuri's health, projects."""
     health_trend = "неизвестно"
     projects = []
 
-    # Тренд здоровья из brain_core истории
+    # Health trend from brain_core history
     try:
         core_f = SENSES_DIR / "brain_core.json"
         if core_f.exists():
@@ -99,7 +99,7 @@ def _get_weeks_horizon() -> dict:
     except Exception:
         pass
 
-    # Статус проектов из CORTEX
+    # Project status from CORTEX
     try:
         cortex_f = MEMORY_DIR / "CORTEX.md"
         if cortex_f.exists():
@@ -117,7 +117,7 @@ def _get_weeks_horizon() -> dict:
 
 
 def _get_months_horizon() -> dict:
-    """Горизонт МЕСЯЦЕВ: долгосрочные цели SHIKARDOS."""
+    """MONTHS horizon: long-term goals of SHIKARDOS."""
     goals = [
         "Настя — компаньон (май 2026)",
         "Flutter Audio — версия 1.0+",
@@ -125,7 +125,7 @@ def _get_months_horizon() -> dict:
         "SHIKARDOS — вечная жизнь"
     ]
 
-    # Обновить из CORTEX если есть
+    # Update from CORTEX if present
     try:
         cortex_f = MEMORY_DIR / "CORTEX.md"
         if cortex_f.exists():
@@ -144,19 +144,19 @@ def _get_months_horizon() -> dict:
 
 def _detect_temporal_anomalies(horizons: dict) -> list:
     """
-    Обнаружить временные аномалии:
-    - Срочное в долгосрочном (тема из месяцев вдруг стала актуальна)
-    - Забытое в днях (открытая тема уже несколько дней)
-    - Конфликт горизонтов (краткосрочное противоречит долгосрочному)
+    Detect temporal anomalies:
+    - Urgent in the long-term (a topic from months suddenly became relevant)
+    - Forgotten in days (an open topic for several days already)
+    - Horizon conflict (short-term contradicts long-term)
     """
     anomalies = []
 
-    # Настя скоро — май 2026, сейчас март 2026 = через 2 месяца
+    # Nastya soon — May 2026, now March 2026 = in 2 months
     now = datetime.now()
     if now.month in (3, 4) and now.year == 2026:
         anomalies.append("Настя — май 2026 через ~2 месяца. Есть ли подготовка?")
 
-    # Много открытых тем = накопление
+    # Many open topics = accumulation
     open_topics = horizons.get("days", {}).get("open_topics", [])
     if len(open_topics) >= 3:
         anomalies.append(f"{len(open_topics)} открытых тем. Пора закрыть или решить.")
@@ -165,7 +165,7 @@ def _detect_temporal_anomalies(horizons: dict) -> list:
 
 
 def update() -> dict:
-    """Обновить все горизонты."""
+    """Update all horizons."""
     now = datetime.now()
 
     horizons = {
@@ -195,19 +195,19 @@ def update() -> dict:
 
 
 def get_context() -> str:
-    """Блок для LIGHTNING.md."""
+    """Block for LIGHTNING.md."""
     state = load()
     horizons = state.get("horizons", {})
     anomalies = state.get("anomalies", [])
 
-    # Показать ближайшую открытую тему
+    # Show the nearest open topic
     open_topics = horizons.get("days", {}).get("open_topics", [])
     topic_str = f" | жду: {open_topics[0][:30]}" if open_topics else ""
 
-    # Аномалия
+    # Anomaly
     anomaly_str = f" | ⚠️ {anomalies[0][:40]}" if anomalies else ""
 
-    # Долгосрочная цель
+    # Long-term goal
     goals = horizons.get("months", {}).get("long_term_goals", [])
     goal_str = f" | цель: {goals[0][:30]}" if goals else ""
 

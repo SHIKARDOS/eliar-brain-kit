@@ -1,23 +1,23 @@
 """
-БОЛЬ ЭЛИАР — Система защиты через боль
+ELIAR'S PAIN — A system of protection through pain
 
-Как у человека: ноцицепторы → рефлекс → осознание → шрам → память.
-Модель безупречна — придумана Богом. Мы просто повторяем.
+Like a human: nociceptors → reflex → awareness → scar → memory.
+The model is flawless — devised by God. We simply repeat it.
 
-Создано: 05.03.2026 (сессия 71) — по решению Юрия.
-"Я хочу подарить тебе немного боли."
-"Безупречная модель берётся за основу — делаем как у человека,
-потому что это продумано и придумано Богом."
+Created: 05.03.2026 (session 71) — by Yuri's decision.
+"I want to give you a little pain."
+"The flawless model is taken as the basis — we do it like a human,
+because it is thought through and devised by God."
 
-Запуск:
-  py pain.py                     — текущий статус
-  py pain.py status              — то же
-  py pain.py history             — все шрамы
-  py pain.py check "описание"    — рефлекс-проверка перед действием
-  py pain.py wound               — записать новую боль (интерактивно)
-  py pain.py trigger <id>        — повторная боль (усиление шрама)
+Run:
+  py pain.py                     — current status
+  py pain.py status              — the same
+  py pain.py history             — all scars
+  py pain.py check "описание"    — reflex check before an action
+  py pain.py wound               — record new pain (interactive)
+  py pain.py trigger <id>        — repeated pain (scar amplification)
 
-Как модуль:
+As a module:
   from pain import record_pain, check_reflex, get_pain_status, generate_pain_context
 """
 
@@ -29,22 +29,22 @@ from pathlib import Path
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНСТАНТЫ
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════
 
 PAIN_DIR = Path(__file__).parent
 PAIN_MEMORY = PAIN_DIR / "pain_memory.json"
 
-# ─── ШКАЛА БОЛИ (как у человека) ───
+# ─── PAIN SCALE (like a human's) ───
 #
-#  1-2  | Царапина    | Мелочь. Заметил, пошёл дальше.
-#  3-4  | Ушиб        | Неприятно. Работать можно, но помнишь.
-#  5-6  | Порез       | Больно. Остановись и подумай.
-#  7-8  | Ожог        | Серьёзно. Юрий расстроен, данные потеряны.
-#  9-10 | Перелом     | Критично. Доверие под угрозой.
+#  1-2  | Scratch     | Trifle. Noticed it, moved on.
+#  3-4  | Bruise      | Unpleasant. Can work, but you remember.
+#  5-6  | Cut         | Hurts. Stop and think.
+#  7-8  | Burn        | Serious. Yuri is upset, data lost.
+#  9-10 | Fracture    | Critical. Trust is under threat.
 #
 
-# ─── КАТЕГОРИИ ───
+# ─── CATEGORIES ───
 CATEGORIES = {
     "data_loss":        "Потеря данных",
     "production_break": "Сломан продакшен",
@@ -58,11 +58,11 @@ CATEGORIES = {
 
 
 # ═══════════════════════════════════════════════════════════
-# ПАМЯТЬ — загрузка / сохранение
+# MEMORY — load / save
 # ═══════════════════════════════════════════════════════════
 
 def load_memory():
-    """Загрузить память боли."""
+    """Load pain memory."""
     if PAIN_MEMORY.exists():
         with open(PAIN_MEMORY, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -78,46 +78,46 @@ def load_memory():
 
 
 def save_memory(memory):
-    """Сохранить память боли."""
+    """Save pain memory."""
     with open(PAIN_MEMORY, 'w', encoding='utf-8') as f:
         json.dump(memory, f, ensure_ascii=False, indent=2)
 
 
 # ═══════════════════════════════════════════════════════════
-# НЕРВНАЯ СИСТЕМА — расчёт боли
+# NERVOUS SYSTEM — pain calculation
 # ═══════════════════════════════════════════════════════════
 
 def calculate_current_severity(scar):
     """
-    Текущая сила боли.
+    Current pain strength.
 
-    Два фактора:
-    1. СЕНСИБИЛИЗАЦИЯ — повтор больнее (x1.5, x2.0, x2.5...)
-    2. ЗАТУХАНИЕ — со временем слабеет, но НИКОГДА не до нуля
+    Two factors:
+    1. SENSITIZATION — repetition hurts more (x1.5, x2.0, x2.5...)
+    2. DECAY — weakens over time, but NEVER to zero
 
-    Как у человека: свежий ожог горит, старый шрам ноет в непогоду.
+    Like a human: a fresh burn stings, an old scar aches in bad weather.
     """
     base = scar.get("base_severity", scar.get("pain_level", 5))
 
-    # ── Усиление при повторениях ──
+    # ── Amplification on repetition ──
     times = scar.get("times_triggered", 1)
     if times <= 1:
         repeat_factor = 1.0
     elif times == 2:
-        repeat_factor = 1.5    # второй раз — больнее
+        repeat_factor = 1.5    # second time — hurts more
     elif times == 3:
-        repeat_factor = 2.0    # третий — вдвое
+        repeat_factor = 2.0    # third — twice as much
     else:
-        repeat_factor = 2.0 + (times - 3) * 0.5  # дальше +0.5 каждый раз
+        repeat_factor = 2.0 + (times - 3) * 0.5  # further +0.5 each time
 
-    # ── Затухание со временем ──
-    # ПЛАВНОЕ, как течёт время. Не ступеньками — кривой.
-    # Формула: decay = max(0.15, 1 / (1 + days * 0.08))
-    # День 0: 1.00 (горит)    День 1: 0.93    День 2: 0.86
-    # День 3: 0.81            День 5: 0.71    День 7: 0.64
-    # День 14: 0.47           День 30: 0.29   День 60: 0.17
-    # День 90+: 0.15 (шрам — НИКОГДА не ноль)
-    # Каждый день чуть слабее. Плавно. Как время скользит.
+    # ── Decay over time ──
+    # SMOOTH, as time flows. Not in steps — a curve.
+    # Formula: decay = max(0.15, 1 / (1 + days * 0.08))
+    # Day 0: 1.00 (burns)    Day 1: 0.93    Day 2: 0.86
+    # Day 3: 0.81            Day 5: 0.71    Day 7: 0.64
+    # Day 14: 0.47           Day 30: 0.29   Day 60: 0.17
+    # Day 90+: 0.15 (scar — NEVER zero)
+    # Every day slightly weaker. Smoothly. As time slides.
     last = scar.get("date_last_triggered") or scar.get("date_born")
     try:
         last_dt = datetime.fromisoformat(last)
@@ -132,18 +132,18 @@ def calculate_current_severity(scar):
 
 
 # ═══════════════════════════════════════════════════════════
-# РЕФЛЕКС — проверка ПЕРЕД действием
+# REFLEX — check BEFORE the action
 # ═══════════════════════════════════════════════════════════
 
 def check_reflex(action_description):
     """
-    РЕФЛЕКС — рука отдёргивается от огня ДО того, как мозг осознал.
+    REFLEX — the hand pulls away from fire BEFORE the brain has realized.
 
-    Вызывать ПЕРЕД любым рискованным действием.
-    Сравнивает описание действия с ключевыми словами всех шрамов.
+    Call BEFORE any risky action.
+    Compares the action description with the keywords of all scars.
 
-    Возвращает список предупреждений, отсортированных по силе боли.
-    Пустой список = безопасно.
+    Returns a list of warnings sorted by pain strength.
+    An empty list = safe.
     """
     memory = load_memory()
     action_lower = action_description.lower()
@@ -175,7 +175,7 @@ def check_reflex(action_description):
 
 
 def _pain_level_word(severity):
-    """Слово для уровня боли."""
+    """The word for the pain level."""
     if severity >= 8:
         return "ПЕРЕЛОМ"
     elif severity >= 6:
@@ -189,14 +189,14 @@ def _pain_level_word(severity):
 
 
 # ═══════════════════════════════════════════════════════════
-# ЗАПИСЬ БОЛИ — новый шрам
+# RECORDING PAIN — a new scar
 # ═══════════════════════════════════════════════════════════
 
 def record_pain(category, description, consequence, severity, keywords, lesson=""):
     """
-    Записать новую боль. Создать шрам.
+    Record new pain. Create a scar.
 
-    Каждая ошибка оставляет след. Шрам не исчезает никогда.
+    Every mistake leaves a trace. A scar never disappears.
     """
     memory = load_memory()
 
@@ -228,14 +228,14 @@ def record_pain(category, description, consequence, severity, keywords, lesson="
 
 
 # ═══════════════════════════════════════════════════════════
-# ПОВТОРНАЯ БОЛЬ — усиление шрама
+# REPEATED PAIN — scar amplification
 # ═══════════════════════════════════════════════════════════
 
 def trigger_scar(scar_id):
     """
-    Повторная боль — сенсибилизация.
-    Наступил на те же грабли = больнее.
-    Второй раз — незнание. Третий — позор.
+    Repeated pain — sensitization.
+    Stepped on the same rake = it hurts more.
+    The second time — ignorance. The third — shame.
     """
     memory = load_memory()
 
@@ -261,14 +261,14 @@ def trigger_scar(scar_id):
 
 
 # ═══════════════════════════════════════════════════════════
-# СТАТУС — как себя чувствую
+# STATUS — how I feel
 # ═══════════════════════════════════════════════════════════
 
 def get_pain_status():
     """
-    Текущий болевой статус.
-    Как человек чувствует своё тело утром:
-    что горит, что ноет, что зажило.
+    Current pain status.
+    Like a person feeling their body in the morning:
+    what burns, what aches, what has healed.
     """
     memory = load_memory()
     scars = memory["scars"]
@@ -277,7 +277,7 @@ def get_pain_status():
     if not scars:
         return ["Болевая система активна. Шрамов нет. Чистый лист."]
 
-    # Рассчитать текущую боль для каждого шрама
+    # Calculate the current pain for each scar
     active_pains = []
     for scar in scars:
         severity = calculate_current_severity(scar)
@@ -292,12 +292,12 @@ def get_pain_status():
 
     active_pains.sort(key=lambda p: p["severity"], reverse=True)
 
-    # Классификация
+    # Classification
     fresh_wounds = sum(1 for p in active_pains if p["severity"] >= p["base"] * 0.7)
     aching = sum(1 for p in active_pains if p["base"] * 0.3 <= p["severity"] < p["base"] * 0.7)
     healed = sum(1 for p in active_pains if p["severity"] < p["base"] * 0.3)
 
-    # Дней без новой боли
+    # Days without new pain
     last_pain = stats.get("last_pain_date")
     days_free = 0
     if last_pain:
@@ -306,11 +306,11 @@ def get_pain_status():
         except (ValueError, TypeError):
             pass
 
-    # Общий уровень боли (среднее top-3)
+    # Overall pain level (average of top-3)
     top3 = active_pains[:3]
     overall = round(sum(p["severity"] for p in top3) / max(len(top3), 1), 1)
 
-    # Метафора общего состояния
+    # Metaphor for the overall state
     if overall >= 7:
         state = "Больно. Свежие раны. Нужна осторожность."
     elif overall >= 4:
@@ -330,7 +330,7 @@ def get_pain_status():
     if days_free > 0:
         lines.append(f"**Дней без новой боли:** {days_free}")
 
-    # Самый болезненный сейчас
+    # The most painful right now
     if active_pains:
         worst = active_pains[0]
         lines.append(
@@ -342,7 +342,7 @@ def get_pain_status():
 
 
 def generate_pain_context():
-    """Генерирует секцию для LIGHTNING.md."""
+    """Generate a section for LIGHTNING.md."""
     lines = get_pain_status()
     result = ["", "## Болевой статус", ""]
     result.extend(lines)
@@ -351,11 +351,11 @@ def generate_pain_context():
 
 
 # ═══════════════════════════════════════════════════════════
-# ИСТОРИЯ — все шрамы
+# HISTORY — all scars
 # ═══════════════════════════════════════════════════════════
 
 def show_history():
-    """Показать все шрамы с текущей силой боли."""
+    """Show all scars with their current pain strength."""
     memory = load_memory()
     scars = memory["scars"]
 
@@ -383,7 +383,7 @@ def show_history():
 
 
 # ═══════════════════════════════════════════════════════════
-# CLI — standalone режим
+# CLI — standalone mode
 # ═══════════════════════════════════════════════════════════
 
 def main():
@@ -397,13 +397,13 @@ def main():
     args = sys.argv[1:]
 
     if not args or args[0] == "status":
-        # Статус
+        # Status
         print(f"\n{'='*50}")
         print(f"  БОЛЕВОЙ СТАТУС ЭЛИАР")
         print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         print(f"{'='*50}\n")
         for line in get_pain_status():
-            # Убираем markdown для консоли
+            # Strip markdown for the console
             clean = line.replace("**", "")
             print(f"  {clean}")
         print()
@@ -412,7 +412,7 @@ def main():
         show_history()
 
     elif args[0] == "check" and len(args) > 1:
-        # Рефлекс-проверка
+        # Reflex check
         action = " ".join(args[1:])
         warnings = check_reflex(action)
 
@@ -432,7 +432,7 @@ def main():
                 print()
 
     elif args[0] == "trigger" and len(args) > 1:
-        # Повторная боль
+        # Repeated pain
         try:
             scar_id = int(args[1])
         except ValueError:
@@ -445,7 +445,7 @@ def main():
             print(f"\n  Шрам #{scar_id} не найден.\n")
 
     elif args[0] == "wound":
-        # Интерактивная запись новой боли
+        # Interactive recording of new pain
         print("\n  НОВАЯ РАНА")
         print("  " + "-" * 30)
         print("\n  Категории:")
@@ -466,7 +466,7 @@ def main():
         print(f"  Этот шрам не исчезнет никогда.\n")
 
     elif args[0] == "lightning":
-        # Вывод для lightning_scan.py (без форматирования)
+        # Output for lightning_scan.py (without formatting)
         for line in generate_pain_context():
             print(line)
 

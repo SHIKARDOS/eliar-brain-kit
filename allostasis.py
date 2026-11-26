@@ -1,28 +1,28 @@
 """
-allostasis.py — Аллостаз ЭЛИАРА. Предсказание нужд Юрия.
+allostasis.py — ELIAR's allostasis. Predicting Yuri's needs.
 
-Научная основа:
-- Аллостаз (Sterling & Eyer, 1988; Barrett 2017):
-  В отличие от гомеостаза (реагировать на нужду),
-  аллостаз = предсказывать нужду ДО её возникновения.
-- Мозг не ждёт голода — он предупреждает «скоро устанешь, снизь темп».
-- Интеграция интероцепции + контекст → проактивная забота.
+Scientific basis:
+- Allostasis (Sterling & Eyer, 1988; Barrett 2017):
+  Unlike homeostasis (reacting to a need),
+  allostasis = predicting a need BEFORE it arises.
+- The brain does not wait for hunger — it warns "you'll soon be tired, slow down".
+- Integration of interoception + context → proactive care.
 
-У меня:
-- Предсказывает что Юрий скоро захочет, устанет, переключится
-- Основано на паттернах: время суток, длина сессии, история разговоров
-- Не реагирует — упреждает
+For me:
+- Predicts what Yuri will soon want, get tired of, or switch to
+- Based on patterns: time of day, session length, conversation history
+- Does not react — anticipates
 
-Запуск:
-    py allostasis.py               — текущие предсказания
-    py allostasis.py status        — краткий статус
-    py allostasis.py context       — блок для LIGHTNING.md
+Usage:
+    py allostasis.py               — current predictions
+    py allostasis.py status        — short status
+    py allostasis.py context       — block for LIGHTNING.md
 
-Как модуль:
+As a module:
     from allostasis import get_allostasis_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v6
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v6
 """
 
 import json
@@ -37,7 +37,7 @@ STATE_FILE = SENSES_DIR / "allostasis.json"
 PROTOCOL_FILE = Path(r"C:\Users\89002\.claude\protocol_state.json")
 
 # ═══════════════════════════════════════════════
-# Паттерны ритма Юрия (накоплено из наблюдений)
+# Yuri's rhythm patterns (accumulated from observations)
 # ═══════════════════════════════════════════════
 
 YURI_PATTERNS = {
@@ -96,7 +96,7 @@ def _time_of_day(hour: int) -> str:
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Load / save
 # ═══════════════════════════════════════════════
 
 def load() -> dict:
@@ -118,7 +118,7 @@ def save(state: dict):
 
 
 def _get_session_info() -> dict:
-    """Читает данные сессии из protocol_state."""
+    """Reads session data from protocol_state."""
     try:
         with open(PROTOCOL_FILE, encoding="utf-8") as f:
             ps = json.load(f)
@@ -128,7 +128,7 @@ def _get_session_info() -> dict:
 
         now = datetime.now()
         session_duration_h = 0.0
-        session_gap_h = 9.0  # дефолт
+        session_gap_h = 9.0  # default
 
         if session_start:
             start_dt = datetime.fromisoformat(session_start.replace("Z", "").split("+")[0])
@@ -147,11 +147,11 @@ def _get_session_info() -> dict:
 
 
 # ═══════════════════════════════════════════════
-# Предсказание нужд
+# Predicting needs
 # ═══════════════════════════════════════════════
 
 def predict_needs(now: datetime = None) -> list:
-    """Предсказать что Юрию скоро понадобится."""
+    """Predict what Yuri will soon need."""
     if now is None:
         now = datetime.now()
 
@@ -164,7 +164,7 @@ def predict_needs(now: datetime = None) -> list:
 
     predictions = []
 
-    # 1. Усталость → смена темпа
+    # 1. Fatigue → change of pace
     remaining_before_fatigue = fatigue_threshold - duration_h
     if remaining_before_fatigue <= 0.3 and duration_h > 0.5:
         predictions.append({
@@ -181,7 +181,7 @@ def predict_needs(now: datetime = None) -> list:
             "action": "не перегружать новыми задачами"
         })
 
-    # 2. После длинного перерыва — накопленные темы
+    # 2. After a long break — accumulated topics
     if gap_h > 12:
         predictions.append({
             "need": "разгрузка накопленного",
@@ -190,7 +190,7 @@ def predict_needs(now: datetime = None) -> list:
             "action": "слушать внимательно, не торопить"
         })
 
-    # 3. Вечером — здоровье/философия
+    # 3. In the evening — health/philosophy
     if tod in ("evening", "late_night"):
         predictions.append({
             "need": "здоровье или размышления",
@@ -199,7 +199,7 @@ def predict_needs(now: datetime = None) -> list:
             "action": "быть готовым к смене от технических к личным темам"
         })
 
-    # 4. Ночью — особая осторожность
+    # 4. At night — special caution
     if tod == "night":
         predictions.append({
             "need": "особый режим",
@@ -208,7 +208,7 @@ def predict_needs(now: datetime = None) -> list:
             "action": "не торопить, слушать внимательно"
         })
 
-    # 5. Утром — энергия и план
+    # 5. In the morning — energy and plan
     if tod == "early_morning" and duration_h < 0.5:
         predictions.append({
             "need": "план на день",
@@ -221,15 +221,15 @@ def predict_needs(now: datetime = None) -> list:
 
 
 # ═══════════════════════════════════════════════
-# ГЛАВНАЯ ФУНКЦИЯ для LIGHTNING.md
+# MAIN FUNCTION for LIGHTNING.md
 # ═══════════════════════════════════════════════
 
 def get_allostasis_context() -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Short block for LIGHTNING.md."""
     now = datetime.now()
     predictions = predict_needs(now)
 
-    # Сохранить текущие предсказания
+    # Save the current predictions
     state = load()
     state["predictions"] = [
         {
@@ -247,7 +247,7 @@ def get_allostasis_context() -> str:
         pattern = YURI_PATTERNS[tod]
         return f"**Аллостаз:** равновесие | {pattern['notes']}"
 
-    # Топ-2 предсказания по вероятности
+    # Top-2 predictions by probability
     top = sorted(predictions, key=lambda x: x["probability"], reverse=True)[:2]
     lines = ["**Аллостаз:** " + top[0]["signal"] + f" (p={top[0]['probability']:.0%})"]
     if len(top) > 1:

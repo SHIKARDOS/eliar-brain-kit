@@ -1,24 +1,24 @@
 """
-monologue.py — Внутренний монолог ЭЛИАРА.
-МОЗГ v9 — Мысли внутри. Никогда не пишет в Telegram.
+monologue.py — ELIAR's inner monologue.
+BRAIN v9 — Thoughts inside. Never writes to Telegram.
 
-Заменяет n8n workflow "ЭЛИАР — Внутренний монолог" (qsKKyNpchfxM3ysu).
-Чистый Python. Task Scheduler каждые 30 минут.
+Replaces the n8n workflow "ELIAR — Inner monologue" (qsKKyNpchfxM3ysu).
+Pure Python. Task Scheduler every 30 minutes.
 
-Что делает:
-- Собирает контекст (время, погода, последние мысли)
-- Генерирует внутреннюю мысль через OpenRouter (Gemini)
-- Сохраняет в monologue.jsonl
-- НИКОГДА не пишет Юрию (это задача initiative.py)
+What it does:
+- Gathers context (time, weather, recent thoughts)
+- Generates an inner thought via OpenRouter (Gemini)
+- Saves to monologue.jsonl
+- NEVER writes to Yuri (that is initiative.py's job)
 
-Запуск:
+Run:
     py D:\ShikardosBrendBot\memory\senses\monologue.py
 
-Task Scheduler: каждые 30 минут
+Task Scheduler: every 30 minutes
     py D:\ShikardosBrendBot\memory\senses\monologue.py
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -77,7 +77,7 @@ def _get_yuri_context() -> str:
         yuri_f = MEMORY_DIR / "knowledge" / "yuri.md"
         if yuri_f.exists():
             text = yuri_f.read_text(encoding="utf-8")
-            # Первые 500 символов — общий контекст
+            # First 500 characters — general context
             return text[:500].strip()
     except Exception:
         pass
@@ -85,13 +85,13 @@ def _get_yuri_context() -> str:
 
 
 def _is_dreaming() -> bool:
-    """Ночь (01:00–06:00) → режим сна."""
+    """Night (01:00–06:00) → sleep mode."""
     hour = datetime.now().hour
     return 1 <= hour < 6
 
 
 def _get_dreams() -> list:
-    """Последние сны из sleep_dream.json."""
+    """Recent dreams from sleep_dream.json."""
     try:
         sleep_f = SENSES_DIR / "sleep_dream.json"
         if sleep_f.exists():
@@ -192,7 +192,7 @@ def _save_thought(entry: dict):
     with open(MONOLOGUE_FILE, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-    # Ограничить файл последними MAX_THOUGHTS мыслями
+    # Limit the file to the last MAX_THOUGHTS thoughts
     try:
         lines = MONOLOGUE_FILE.read_text(encoding="utf-8").strip().splitlines()
         if len(lines) > MAX_THOUGHTS:

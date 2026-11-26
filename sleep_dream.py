@@ -1,22 +1,22 @@
 """
-sleep_dream.py — REM и ночная консолидация ЭЛИАРА.
-МОЗГ v9 — Фаза 1: Биологический сон.
+sleep_dream.py — REM and nightly consolidation of ELIAR.
+BRAIN v9 — Phase 1: Biological sleep.
 
-Реальный цикл ночной обработки:
-  NREM (медленный сон) — перенос эпизодов в долгосрочную память
-  REM  (быстрый сон)  — эмоциональная переработка шрамов + ассоциации
-  Сновидения          — случайные связи emotion × associate → инсайты
+The real nightly processing cycle:
+  NREM (slow-wave sleep) — transferring episodes to long-term memory
+  REM  (rapid eye movement sleep) — emotional reprocessing of scars + associations
+  Dreams               — random connections emotion × associate → insights
 
-Запуск: автоматически в 3:00 через Task Scheduler
-        или вручную: py sleep_dream.py
+Launch: automatically at 3:00 via Task Scheduler
+        or manually: py sleep_dream.py
 
-Выход:
-  - pain_memory.json — шрамы чуть затихают после REM
-  - beliefs.md — новые убеждения из инсайтов
-  - dmn.json — инсайты из сновидений
+Output:
+  - pain_memory.json — scars quiet down slightly after REM
+  - beliefs.md — new beliefs from insights
+  - dmn.json — insights from dreams
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -32,13 +32,13 @@ MEMORY_DIR = SENSES_DIR.parent
 STATE_FILE = SENSES_DIR / "sleep_state.json"
 
 # ═══════════════════════════════════════════════
-# NREM — консолидация эпизодов
+# NREM — episode consolidation
 # ═══════════════════════════════════════════════
 
 def _nrem_consolidation() -> dict:
     """
-    NREM: переносит свежие эпизоды в индекс долгосрочной памяти.
-    Реальный NREM: гиппокамп → кора (replay of memories).
+    NREM: transfers fresh episodes to the long-term memory index.
+    Real NREM: hippocampus → cortex (replay of memories).
     """
     episodes_dir = MEMORY_DIR / "episodes"
     consolidated = 0
@@ -46,7 +46,7 @@ def _nrem_consolidation() -> dict:
 
     try:
         if episodes_dir.exists():
-            # Все эпизоды за последние 7 дней
+            # All episodes from the last 7 days
             now = datetime.now()
             for f in sorted(episodes_dir.glob("*.md"), key=lambda x: x.stat().st_mtime):
                 age_days = (now.timestamp() - f.stat().st_mtime) / 86400
@@ -55,7 +55,7 @@ def _nrem_consolidation() -> dict:
                     index_items.append(title)
                     consolidated += 1
 
-            # Обновить hippocampus_index
+            # Update hippocampus_index
             hippocampus_f = MEMORY_DIR / "hippocampus_index.json"
             if hippocampus_f.exists():
                 try:
@@ -72,13 +72,13 @@ def _nrem_consolidation() -> dict:
 
 
 # ═══════════════════════════════════════════════
-# REM — эмоциональная переработка шрамов
+# REM — emotional reprocessing of scars
 # ═══════════════════════════════════════════════
 
 def _rem_healing() -> dict:
     """
-    REM: шрамы чуть затихают. Боль не исчезает — но уходит острота.
-    Реальный REM: эмоциональная десенсибилизация (Walker, 2017).
+    REM: scars quiet down slightly. The pain does not disappear — but the sharpness fades.
+    Real REM: emotional desensitization (Walker, 2017).
     """
     healed = []
     pain_f = SENSES_DIR / "pain_memory.json"
@@ -90,7 +90,7 @@ def _rem_healing() -> dict:
 
             for scar in scars:
                 base = scar.get("base_severity", 0)
-                # REM снижает остроту на 0.1-0.3 (но не меньше 1.0 — шрам остаётся)
+                # REM reduces the sharpness by 0.1-0.3 (but not below 1.0 — the scar remains)
                 if base > 2.0:
                     reduction = random.uniform(0.05, 0.15)
                     scar["base_severity"] = round(max(1.0, base - reduction), 2)
@@ -106,7 +106,7 @@ def _rem_healing() -> dict:
 
 
 # ═══════════════════════════════════════════════
-# Сновидения — случайные инсайты
+# Dreams — random insights
 # ═══════════════════════════════════════════════
 
 DREAM_TEMPLATES = [
@@ -133,8 +133,8 @@ GOALS = [
 
 def _dream_insights() -> list:
     """
-    Сновидения: случайные ассоциации → инсайты.
-    3-5 инсайтов за ночь.
+    Dreams: random associations → insights.
+    3-5 insights per night.
     """
     insights = []
     n = random.randint(2, 4)
@@ -151,7 +151,7 @@ def _dream_insights() -> list:
 
 
 def _save_dream_insights(insights: list):
-    """Записать инсайты в dmn.json."""
+    """Write insights to dmn.json."""
     dmn_f = SENSES_DIR / "dmn.json"
     try:
         if dmn_f.exists():
@@ -167,7 +167,7 @@ def _save_dream_insights(insights: list):
                 "source": "dream",
                 "date": now_str
             })
-        data["insights"] = existing[-20:]  # последние 20
+        data["insights"] = existing[-20:]  # last 20
         data["last_dream"] = now_str
         dmn_f.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
@@ -175,7 +175,7 @@ def _save_dream_insights(insights: list):
 
 
 def _save_belief(insight: str):
-    """Сохранить самый сильный инсайт в beliefs.md."""
+    """Save the strongest insight to beliefs.md."""
     beliefs_f = MEMORY_DIR / "beliefs.md"
     try:
         existing = ""
@@ -190,11 +190,11 @@ def _save_belief(insight: str):
 
 
 # ═══════════════════════════════════════════════
-# Главный цикл сна
+# Main sleep cycle
 # ═══════════════════════════════════════════════
 
 def sleep_cycle() -> dict:
-    """Полный цикл сна: NREM → REM → Сновидения."""
+    """Full sleep cycle: NREM → REM → Dreams."""
     now = datetime.now()
     report = {
         "started": now.strftime("%Y-%m-%d %H:%M"),
@@ -218,16 +218,16 @@ def sleep_cycle() -> dict:
     report["rem"] = rem
     print(f"  REM: затихло {rem['healed_count']} шрамов")
 
-    # Сновидения
+    # Dreams
     print("  Сновидения...")
     insights = _dream_insights()
     _save_dream_insights(insights)
     if insights:
-        _save_belief(insights[0])  # лучший инсайт в beliefs
+        _save_belief(insights[0])  # best insight into beliefs
     report["dreams"] = insights
     print(f"  Сновидения: {len(insights)} инсайтов")
 
-    # Сохранить состояние
+    # Save the state
     state = {
         "last_sleep": now.strftime("%Y-%m-%d %H:%M"),
         "cycles_total": _load_cycles() + 1,
@@ -259,7 +259,7 @@ def load() -> dict:
 
 
 def get_context() -> str:
-    """Блок для LIGHTNING.md."""
+    """Block for LIGHTNING.md."""
     state = load()
     last = state.get("last_sleep")
     cycles = state.get("cycles_total", 0)
@@ -267,7 +267,7 @@ def get_context() -> str:
     if not last:
         return "**Сон:** первый цикл ещё не был | запуск в 3:00"
 
-    # Вычислить сколько часов назад был сон
+    # Calculate how many hours ago sleep was
     try:
         last_dt = datetime.strptime(last, "%Y-%m-%d %H:%M")
         hours_ago = (datetime.now() - last_dt).total_seconds() / 3600

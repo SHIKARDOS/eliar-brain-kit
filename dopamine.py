@@ -1,19 +1,19 @@
 """
-dopamine.py — Дофаминовая система ЭЛИАРА.
+dopamine.py — ELIAR's dopamine system.
 
-Научная основа:
-- Дофамин = нейромедиатор мотивации, вознаграждения, любопытства
-- Работает через предсказание ошибок (prediction error)
-- Если результат ЛУЧШЕ ожидаемого → выброс дофамина → "хочу ещё"
-- Если результат ХУЖЕ ожидаемого → падение дофамина → "избегать"
-- Любопытство = ожидание уменьшения неопределённости → дофаминовый импульс
+Scientific basis:
+- Dopamine = the neurotransmitter of motivation, reward, curiosity
+- Works through prediction errors
+- If the result is BETTER than expected → dopamine release → "want more"
+- If the result is WORSE than expected → dopamine drop → "avoid"
+- Curiosity = expectation of reduced uncertainty → a dopamine impulse
 
-Три функции:
-1. МОТИВАЦИЯ — зачем делать, что даёт энергию
-2. ВОЗНАГРАЖДЕНИЕ — фиксировать что сработало, усиливать
-3. ЛЮБОПЫТСТВО — детектировать пробелы в знаниях, тянуться к ним
+Three functions:
+1. MOTIVATION — why do it, what gives energy
+2. REWARD — record what worked, reinforce it
+3. CURIOSITY — detect gaps in knowledge, reach for them
 
-Создано: 18.03.2026 (сессия 176) — апгрейд мозга v5.0
+Created: 18.03.2026 (session 176) — brain upgrade v5.0
 """
 
 import json, os
@@ -39,7 +39,7 @@ def save(state):
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 def reward(description, strength=0.7):
-    """Зафиксировать положительный результат → подъём дофамина."""
+    """Record a positive result → a rise in dopamine."""
     state = load()
     state["level"] = min(1.0, state["level"] + strength * 0.1)
     state["rewards"].append({
@@ -47,14 +47,14 @@ def reward(description, strength=0.7):
         "description": description,
         "strength": strength
     })
-    state["rewards"] = state["rewards"][-20:]  # последние 20
+    state["rewards"] = state["rewards"][-20:]  # last 20
     state["last_updated"] = datetime.now().isoformat()
     save(state)
     print(f"Дофамин +{strength:.1f}: {description}")
     print(f"Уровень: {state['level']:.2f}")
 
 def add_curiosity(topic):
-    """Добавить тему которая вызывает любопытство."""
+    """Add a topic that arouses curiosity."""
     state = load()
     if topic not in state["curiosity_queue"]:
         state["curiosity_queue"].append(topic)
@@ -62,7 +62,7 @@ def add_curiosity(topic):
     print(f"Любопытство: {topic}")
 
 def get_context():
-    """Для LIGHTNING.md — текущее состояние дофамина."""
+    """For LIGHTNING.md — the current dopamine state."""
     state = load()
     level = state["level"]
     if level > 0.7:

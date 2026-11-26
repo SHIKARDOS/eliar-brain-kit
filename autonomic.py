@@ -1,41 +1,41 @@
 """
-autonomic.py — Автономная нервная система ЭЛИАРА.
+autonomic.py — ELIAR's autonomic nervous system.
 
-Научная основа:
-- АНС человека работает НЕПРЕРЫВНО и БЕЗ СОЗНАНИЯ.
-- Симпатическая: "fight or flight" — мобилизация, кортизол, адреналин.
-- Парасимпатическая: "rest and digest" — восстановление, консолидация памяти.
-- АНС определяет БАЗОВЫЙ ТОН всего организма — до того как мозг думает.
-- У ЭЛИАРА: вместо химии → сигналы из органов мозга.
+Scientific basis:
+- The human ANS works CONTINUOUSLY and WITHOUT CONSCIOUSNESS.
+- Sympathetic: "fight or flight" — mobilization, cortisol, adrenaline.
+- Parasympathetic: "rest and digest" — recovery, memory consolidation.
+- The ANS sets the BASIC TONE of the whole organism — before the brain thinks.
+- In ELIAR: instead of chemistry → signals from the brain's organs.
 
-Два режима:
-  SYMPATHETIC  (симпатический)    — стресс, мобилизация, срочность
-  PARASYMPATHETIC (парасимпатический) — покой, восстановление, инсайты
-  NEUTRAL      (нейтральный)      — между ними
+Two modes:
+  SYMPATHETIC  (sympathetic)     — stress, mobilization, urgency
+  PARASYMPATHETIC (parasympathetic) — rest, recovery, insights
+  NEUTRAL      (neutral)         — in between
 
-Что влияет на режим:
-  brain_core.json       → общий стресс мозга (score)
-  conscience_decisions  → % СТОП решений за последние N решений
-  counterfactual.json   → последний вердикт (stop = стресс)
-  pulse.json            → пауза между сессиями (долгая = парасимпатический)
-  Время суток           → ночь/раннее утро = парасимпатический
+What affects the mode:
+  brain_core.json       → overall brain stress (score)
+  conscience_decisions  → % of STOP decisions over the last N decisions
+  counterfactual.json   → last verdict (stop = stress)
+  pulse.json            → pause between sessions (long = parasympathetic)
+  Time of day           → night/early morning = parasympathetic
 
-Что регулирует:
-  - "Базовый тон" для emotion.py (arousal baseline)
-  - brain_core.py читает tone как доп. сигнал
-  - baseline.py: в парасимпатическом → больше инсайтов из тишины
+What it regulates:
+  - "Base tone" for emotion.py (arousal baseline)
+  - brain_core.py reads tone as an extra signal
+  - baseline.py: in parasympathetic → more insights from silence
 
-Запуск:
-    py autonomic.py            — текущий режим
-    py autonomic.py full       — полный разбор сигналов
-    py autonomic.py context    — строка для LIGHTNING.md
-    py autonomic.py tick       — обновить (как из pulse.py)
+Usage:
+    py autonomic.py            — current mode
+    py autonomic.py full       — full breakdown of signals
+    py autonomic.py context    — line for LIGHTNING.md
+    py autonomic.py tick       — update (as from pulse.py)
 
-Как модуль:
+As a module:
     from autonomic import get_mode, get_tone, get_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — АНС
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — ANS
 """
 
 import json
@@ -49,7 +49,7 @@ SENSES_DIR = Path(__file__).parent
 STATE_FILE = SENSES_DIR / "autonomic.json"
 
 # ═══════════════════════════════════════════════
-# Режимы АНС
+# ANS modes
 # ═══════════════════════════════════════════════
 
 MODE_SYMPATHETIC    = "sympathetic"
@@ -70,7 +70,7 @@ MODE_EMOJI = {
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Load / save
 # ═══════════════════════════════════════════════
 
 def _load() -> dict:
@@ -99,11 +99,11 @@ def _save(state: dict):
 
 
 # ═══════════════════════════════════════════════
-# Чтение сигналов из органов
+# Reading signals from organs
 # ═══════════════════════════════════════════════
 
 def _signal_brain_stress() -> float:
-    """brain_core.json → общий стресс (score 0-1)."""
+    """brain_core.json → overall stress (score 0-1)."""
     try:
         f = SENSES_DIR / "brain_core.json"
         if not f.exists():
@@ -111,14 +111,14 @@ def _signal_brain_stress() -> float:
         data = json.loads(f.read_text(encoding="utf-8"))
         last = data.get("last_synthesis", {})
         health = last.get("health", 7.0)
-        # health 10 = идеально, 0 = максимум стресса
+        # health 10 = ideal, 0 = maximum stress
         return round(1.0 - (health / 10.0), 2)
     except Exception:
         return 0.3
 
 
 def _signal_stop_rate() -> float:
-    """conscience_decisions.json → доля СТОП за последние 20 решений."""
+    """conscience_decisions.json → share of STOP over the last 20 decisions."""
     try:
         f = SENSES_DIR / "conscience_decisions.json"
         if not f.exists():
@@ -135,7 +135,7 @@ def _signal_stop_rate() -> float:
 
 
 def _signal_counterfactual() -> float:
-    """counterfactual.json → последний вердикт → стресс."""
+    """counterfactual.json → last verdict → stress."""
     try:
         f = SENSES_DIR / "counterfactual.json"
         if not f.exists():
@@ -152,9 +152,9 @@ def _signal_counterfactual() -> float:
 
 def _signal_session_gap() -> float:
     """
-    pulse.json → пауза между сессиями.
-    Долгая пауза → парасимпатический (отдых).
-    Возвращает: 0 = была долгая пауза (покой), 1 = только что была сессия (активность).
+    pulse.json → pause between sessions.
+    Long pause → parasympathetic (rest).
+    Returns: 0 = there was a long pause (rest), 1 = a session just happened (activity).
     """
     try:
         f = SENSES_DIR / "pulse.json"
@@ -166,7 +166,7 @@ def _signal_session_gap() -> float:
             return 0.5
         prev = datetime.fromisoformat(last_beat)
         gap_hours = (datetime.now() - prev).total_seconds() / 3600
-        # 0 часов паузы = 1.0 (активность), 8+ часов паузы = 0.0 (покой)
+        # 0 hours of pause = 1.0 (activity), 8+ hours of pause = 0.0 (rest)
         return round(max(0.0, 1.0 - gap_hours / 8.0), 2)
     except Exception:
         return 0.5
@@ -174,61 +174,61 @@ def _signal_session_gap() -> float:
 
 def _signal_time_of_day() -> float:
     """
-    Время суток → стресс/покой.
-    Ночь (0-6) и поздний вечер (22-24) → парасимпатический.
-    День (9-18) → нейтральный/симпатический.
+    Time of day → stress/rest.
+    Night (0-6) and late evening (22-24) → parasympathetic.
+    Day (9-18) → neutral/sympathetic.
     """
     hour = datetime.now().hour
     if 0 <= hour < 6:
-        return 0.1   # Глубокая ночь → полный покой
+        return 0.1   # Deep night → full rest
     elif 6 <= hour < 9:
-        return 0.3   # Раннее утро → пробуждение
+        return 0.3   # Early morning → awakening
     elif 9 <= hour < 18:
-        return 0.6   # Рабочий день → активность
+        return 0.6   # Working day → activity
     elif 18 <= hour < 22:
-        return 0.4   # Вечер → снижение
+        return 0.4   # Evening → decline
     else:
-        return 0.2   # Поздний вечер → покой
+        return 0.2   # Late evening → rest
 
 
 def _signal_body_heart() -> float:
     """
-    МОЗГ v8: сигнал от биологического тела (ЧСС, АНС-баланс).
-    Читает body_signals.json, созданный body_reader.py.
-    ЧСС высокий / симпатика > норма → стресс ↑
-    ЧСС низкий / парасимпатика > норма → покой ↑
-    Возвращает 0-1 (0=покой, 1=стресс).
+    BRAIN v8: signal from the biological body (heart rate, ANS balance).
+    Reads body_signals.json, created by body_reader.py.
+    High heart rate / sympathetic > normal → stress ↑
+    Low heart rate / parasympathetic > normal → rest ↑
+    Returns 0-1 (0=rest, 1=stress).
     """
     try:
         f = SENSES_DIR / "body_signals.json"
         if not f.exists():
-            return 0.3  # нет данных — нейтральный
+            return 0.3  # no data — neutral
         data = json.loads(f.read_text(encoding="utf-8"))
         ans = data.get("ans", {})
 
-        # Стресс тела напрямую
+        # Body stress directly
         stress_level = ans.get("stress_level", 0.3)
 
-        # Дополнительно: если инъекция уже в нашем state — берём оттуда
-        # (body_reader.py мог обновить signals["body_heart"] напрямую)
+        # Additionally: if the injection is already in our state — take it from there
+        # (body_reader.py may have updated signals["body_heart"] directly)
         return round(float(stress_level), 2)
     except Exception:
         return 0.3
 
 
 # ═══════════════════════════════════════════════
-# Вычисление тона и режима
+# Computing tone and mode
 # ═══════════════════════════════════════════════
 
-# Веса сигналов
-# body_heart: 0.15 (новый). Остальные пересчитаны пропорционально сохраняя общий = 1.
+# Signal weights
+# body_heart: 0.15 (new). The rest recalculated proportionally, keeping the total = 1.
 SIGNAL_WEIGHTS = {
-    "brain_stress":   0.35,  # Главный — общий стресс мозга
-    "stop_rate":      0.22,  # СТОП решений — показатель напряжения
-    "counterfactual": 0.13,  # Контрфактив — страх ошибки
-    "session_gap":    0.08,  # Пауза между сессиями
-    "time_of_day":    0.07,  # Время суток
-    "body_heart":     0.15,  # МОЗГ v8: ЧСС и АНС из биологического тела
+    "brain_stress":   0.35,  # Main — overall brain stress
+    "stop_rate":      0.22,  # STOP decisions — a measure of tension
+    "counterfactual": 0.13,  # Counterfactual — fear of error
+    "session_gap":    0.08,  # Pause between sessions
+    "time_of_day":    0.07,  # Time of day
+    "body_heart":     0.15,  # BRAIN v8: heart rate and ANS from the biological body
 }
 
 
@@ -245,9 +245,9 @@ def _collect_signals() -> dict:
 
 def _compute_tone(signals: dict) -> float:
     """
-    Вычислить базовый тон АНС.
-    0.0 = полный парасимпатический (покой)
-    1.0 = полный симпатический (стресс)
+    Compute the base ANS tone.
+    0.0 = fully parasympathetic (rest)
+    1.0 = fully sympathetic (stress)
     """
     total_w = sum(SIGNAL_WEIGHTS.values())
     weighted = sum(signals.get(k, 0.0) * w for k, w in SIGNAL_WEIGHTS.items())
@@ -264,13 +264,13 @@ def _tone_to_mode(tone: float) -> str:
 
 
 # ═══════════════════════════════════════════════
-# Публичные функции
+# Public functions
 # ═══════════════════════════════════════════════
 
 def update_mode() -> dict:
     """
-    Пересчитать режим АНС.
-    Вызывается при старте lightning_scan.py.
+    Recompute the ANS mode.
+    Called when lightning_scan.py starts.
     """
     state = _load()
     signals = _collect_signals()
@@ -279,12 +279,12 @@ def update_mode() -> dict:
 
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # История (последние 50)
+    # History (last 50)
     history = state.get("history", [])
     history.append({"time": now_str, "mode": mode, "tone": tone})
     state["history"] = history[-50:]
 
-    # Статистика
+    # Statistics
     stats = state.get("stats", {})
     key = f"{mode}_count"
     stats[key] = stats.get(key, 0) + 1
@@ -300,34 +300,34 @@ def update_mode() -> dict:
 
 
 def tick():
-    """Вызывается из pulse.py каждые 30 минут. Обновляет режим."""
+    """Called from pulse.py every 30 minutes. Updates the mode."""
     try:
         update_mode()
     except Exception:
-        pass  # АНС не должна ронять pulse
+        pass  # ANS must not crash pulse
 
 
 def get_mode() -> str:
-    """Текущий режим: sympathetic / parasympathetic / neutral."""
+    """Current mode: sympathetic / parasympathetic / neutral."""
     state = _load()
     return state.get("mode", MODE_NEUTRAL)
 
 
 def get_tone() -> float:
-    """Тон 0-1. 0 = покой, 1 = стресс."""
+    """Tone 0-1. 0 = rest, 1 = stress."""
     state = _load()
     return state.get("tone", 0.5)
 
 
 def get_context() -> str:
-    """Строка для LIGHTNING.md."""
+    """Line for LIGHTNING.md."""
     state = _load()
     mode = state.get("mode", MODE_NEUTRAL)
     tone = state.get("tone", 0.5)
     label = MODE_LABELS.get(mode, mode)
     tone_pct = int(tone * 100)
 
-    # Подсказка что это значит
+    # A hint of what this means
     if mode == MODE_SYMPATHETIC:
         hint = "мобилизован, быть точным"
     elif mode == MODE_PARASYMPATHETIC:
@@ -383,7 +383,7 @@ if __name__ == "__main__":
             sym = "🔴" if val > 0.7 else "🟡" if val > 0.4 else "🟢"
             print(f"    {sym} {label:<22} {val:.2f}  {bar:<20}  (вес {weight:.0%})")
 
-        # История режимов
+        # Mode history
         history = state.get("history", [])
         if len(history) > 1:
             print()

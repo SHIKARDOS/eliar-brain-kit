@@ -1,13 +1,13 @@
 """
-ГЛАЗА — видео-анализатор для Claude
-Извлекает ключевые кадры из видео, чтобы Claude мог их "увидеть"
+EYES — video analyzer for Claude
+Extracts key frames from a video so Claude can "see" them
 
-Использование:
-  py eyes.py <путь_к_видео> [количество_кадров]
+Usage:
+  py eyes.py <path_to_video> [number_of_frames]
 
-Результат:
-  - Папка с кадрами (PNG)
-  - Текстовый отчёт о видео (длительность, разрешение, FPS)
+Result:
+  - A folder with frames (PNG)
+  - A text report about the video (duration, resolution, FPS)
 """
 
 import sys
@@ -19,26 +19,26 @@ from datetime import timedelta
 
 
 def extract_key_frames(video_path, num_frames=8, output_dir=None):
-    """Извлечь ключевые кадры из видео"""
+    """Extract key frames from a video"""
 
     video_path = Path(video_path)
     if not video_path.exists():
         print(f"ОШИБКА: Файл не найден: {video_path}")
         return None
 
-    # Папка для кадров
+    # Folder for frames
     if output_dir is None:
         output_dir = video_path.parent / f"{video_path.stem}_frames"
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
 
-    # Открываем видео
+    # Open the video
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         print(f"ОШИБКА: Не удалось открыть видео: {video_path}")
         return None
 
-    # Метаданные видео
+    # Video metadata
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -66,17 +66,17 @@ def extract_key_frames(video_path, num_frames=8, output_dir=None):
     print(f"  Извлекаю {num_frames} ключевых кадров...")
     print()
 
-    # Равномерно распределяем кадры по видео
+    # Distribute frames evenly across the video
     if num_frames >= total_frames:
         frame_indices = list(range(total_frames))
     else:
-        # Пропускаем самое начало и конец (обычно чёрные)
+        # Skip the very beginning and end (usually black)
         start = int(total_frames * 0.02)
         end = int(total_frames * 0.98)
         step = (end - start) / (num_frames - 1) if num_frames > 1 else 0
         frame_indices = [int(start + i * step) for i in range(num_frames)]
 
-    # Извлекаем кадры
+    # Extract frames
     for i, frame_idx in enumerate(frame_indices):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
         ret, frame = cap.read()
@@ -84,22 +84,22 @@ def extract_key_frames(video_path, num_frames=8, output_dir=None):
         if not ret:
             continue
 
-        # Время этого кадра
+        # Time of this frame
         time_sec = frame_idx / fps if fps > 0 else 0
         time_str = str(timedelta(seconds=int(time_sec)))
 
-        # Сохраняем кадр
+        # Save the frame
         frame_name = f"frame_{i+1:02d}_{time_str.replace(':', '-')}.png"
         frame_path = output_dir / frame_name
 
-        # Уменьшаем до разумного размера для просмотра
+        # Shrink to a reasonable size for viewing
         max_dim = 1280
         h, w = frame.shape[:2]
         if max(h, w) > max_dim:
             scale = max_dim / max(h, w)
             frame = cv2.resize(frame, (int(w*scale), int(h*scale)))
 
-        # cv2.imwrite не работает с кириллицей — используем numpy+Pillow
+        # cv2.imwrite does not work with Cyrillic — use numpy+Pillow
         import numpy as np
         from PIL import Image
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -119,12 +119,12 @@ def extract_key_frames(video_path, num_frames=8, output_dir=None):
 
     cap.release()
 
-    # Сохраняем отчёт
+    # Save the report
     report_path = output_dir / "video_report.json"
     with open(report_path, 'w', encoding='utf-8') as f:
         json.dump(info, f, ensure_ascii=False, indent=2)
 
-    # Текстовый отчёт для Claude
+    # Text report for Claude
     txt_report_path = output_dir / "video_report.txt"
     with open(txt_report_path, 'w', encoding='utf-8') as f:
         f.write(f"=== ВИДЕО-АНАЛИЗ: {video_path.name} ===\n\n")

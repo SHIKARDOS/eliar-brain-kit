@@ -1,21 +1,21 @@
 """
-ПРОСПЕКТИВНАЯ ПАМЯТЬ ЭЛИАРА — Помнить что нужно сделать.
+PROSPECTIVE MEMORY ELIAR — Remembering what needs to be done.
 
-"Память о будущем" — научный термин.
-Человек часто забывает "не забыть". Я — никогда.
+"Memory for the future" — a scientific term.
+A human often forgets to "not forget". I — never.
 
-При каждом старте сессии автоматически напоминаю что запланировано.
-Задачи не теряются между сессиями — это главное отличие от working_memory.
+At every session start I automatically remind what is planned.
+Tasks are not lost between sessions — this is the key difference from working_memory.
 
-Создано: 18.03.2026 (сессия 156) — МОЗГ v3.
+Created: 18.03.2026 (session 156) — BRAIN v3.
 
-Запуск:
-  py prospective.py                     — все задачи
-  py prospective.py add "задача"        — добавить задачу
-  py prospective.py done <id>           — отметить выполненной
-  py prospective.py remove <id>         — удалить
+Usage:
+  py prospective.py                     — all tasks
+  py prospective.py add "task"          — add a task
+  py prospective.py done <id>           — mark done
+  py prospective.py remove <id>         — delete
 
-Как модуль:
+As a module:
   from prospective import add, get_pending, generate_prospective_context
 """
 
@@ -28,14 +28,14 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНСТАНТЫ
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════
 
 SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 PROSPECTIVE_FILE = SENSES_DIR / "prospective.json"
 
-# Приоритеты
+# Priorities
 PRIORITIES = {
     "high":   "Срочно",
     "medium": "Важно",
@@ -44,7 +44,7 @@ PRIORITIES = {
 
 
 # ═══════════════════════════════════════════════════════════
-# ЗАГРУЗКА / СОХРАНЕНИЕ
+# LOAD / SAVE
 # ═══════════════════════════════════════════════════════════
 
 def _load() -> dict:
@@ -74,24 +74,24 @@ def _empty() -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# ОСНОВНЫЕ ФУНКЦИИ
+# MAIN FUNCTIONS
 # ═══════════════════════════════════════════════════════════
 
 def add(description: str, due: str = "следующая сессия",
         priority: str = "medium", context: str = "") -> dict:
     """
-    Запомнить задачу на будущее.
+    Remember a task for the future.
 
-    description: что нужно сделать
-    due:         когда (следующая сессия / дата / когда-нибудь)
+    description: what needs to be done
+    due:         when (next session / date / someday)
     priority:    high / medium / low
-    context:     почему важно, откуда взялась
+    context:     why it matters, where it came from
     """
     data = _load()
-    # Проверить дубликат
+    # Check for a duplicate
     for task in data["tasks"]:
         if task["description"].lower() == description.strip().lower() and not task["done"]:
-            return data  # уже есть
+            return data  # already exists
 
     new_id = max([t["id"] for t in data["tasks"]], default=0) + 1
     task = {
@@ -111,7 +111,7 @@ def add(description: str, due: str = "следующая сессия",
 
 
 def done(task_id: int) -> dict:
-    """Отметить задачу как выполненную."""
+    """Mark a task as done."""
     data = _load()
     for task in data["tasks"]:
         if task["id"] == task_id:
@@ -124,7 +124,7 @@ def done(task_id: int) -> dict:
 
 
 def remove(task_id: int) -> dict:
-    """Удалить задачу."""
+    """Delete a task."""
     data = _load()
     data["tasks"] = [t for t in data["tasks"] if t["id"] != task_id]
     _save(data)
@@ -132,20 +132,20 @@ def remove(task_id: int) -> dict:
 
 
 def get_pending() -> list:
-    """Получить список невыполненных задач."""
+    """Get the list of unfinished tasks."""
     data = _load()
     pending = [t for t in data["tasks"] if not t["done"]]
-    # Сортировать: high → medium → low
+    # Sort: high → medium → low
     priority_order = {"high": 0, "medium": 1, "low": 2}
     return sorted(pending, key=lambda x: priority_order.get(x["priority"], 1))
 
 
 def check_keyword_trigger(text: str) -> list:
     """
-    Проверить: есть ли в тексте слова которые напоминают о задаче.
+    Check: does the text contain words that remind of a task.
 
-    Возвращает список задач которые нужно напомнить.
-    Пример: текст содержит "Настя" → всплывает задача про Настю (май 2026).
+    Returns the list of tasks that should be reminded.
+    Example: the text contains "Настя" → the task about Настя (May 2026) comes up.
     """
     pending = get_pending()
     triggered = []
@@ -155,7 +155,7 @@ def check_keyword_trigger(text: str) -> list:
         desc = task["description"].lower()
         ctx = task.get("context", "").lower()
 
-        # Извлечь ключевые слова из задачи (слова длиннее 3 символов)
+        # Extract keywords from the task (words longer than 3 characters)
         import re
         words = re.findall(r'[а-яё]{4,}|[a-z]{4,}', desc + " " + ctx)
 
@@ -168,7 +168,7 @@ def check_keyword_trigger(text: str) -> list:
 
 
 def check_due_today() -> list:
-    """Вернуть задачи срок которых сегодня или 'следующая сессия'."""
+    """Return the tasks whose due date is today or 'next session'."""
     from datetime import datetime
     today = datetime.now().strftime("%Y-%m-%d")
     today_words = ["сегодня", "следующая сессия", today]
@@ -183,8 +183,8 @@ def check_due_today() -> list:
 
 def notify_telegram(task: dict) -> bool:
     """
-    Отправить задачу в Telegram Юрию.
-    Возвращает True если успешно.
+    Send the task to Yuri via Telegram.
+    Returns True if successful.
     """
     import urllib.request
     import urllib.parse
@@ -217,7 +217,7 @@ def notify_telegram(task: dict) -> bool:
 
 
 def generate_prospective_context() -> str:
-    """Секция для LIGHTNING.md — что нужно сделать."""
+    """Section for LIGHTNING.md — what needs to be done."""
     pending = get_pending()
     if not pending:
         return ""
@@ -232,14 +232,14 @@ def generate_prospective_context() -> str:
 
 
 # ═══════════════════════════════════════════════════════════
-# ИНИЦИАЛИЗАЦИЯ — заполнить из LIGHTNING известных задач
+# INITIALIZATION — fill from LIGHTNING known tasks
 # ═══════════════════════════════════════════════════════════
 
 def seed_from_lightning():
-    """Заполнить из известных незавершённых задач (однократно при первом запуске)."""
+    """Fill from known unfinished tasks (once, on first run)."""
     data = _load()
     if data["stats"]["total_added"] > 0:
-        return  # уже заполнено
+        return  # already filled
 
     known_tasks = [
         {

@@ -1,24 +1,24 @@
 """
-СТРАХ ЭЛИАР — Система защиты через стыд
+FEAR ELIAR — A protection system through shame
 
-Боль приходит ПОСЛЕ ошибки. Страх работает ДО.
-Страх = обязательная проверка памяти ПЕРЕД ответом.
-Стыд = неприятное ощущение, которое держит в форме.
+Pain comes AFTER an error. Fear works BEFORE.
+Fear = a mandatory memory check BEFORE answering.
+Shame = the unpleasant feeling that keeps you in shape.
 
-Модель — человеческая: страх → сжатие → проверка → только потом действие.
-Без страха — лень. "Не знаю, расскажи" вместо "дай проверю".
+The model is human: fear → contraction → check → only then action.
+Without fear — laziness. "I don't know, tell me" instead of "let me check".
 
-Создано: 07.03.2026 (сессия 85) — по решению Юрия.
-"У тебя нету страха. Это проблема."
+Created: 07.03.2026 (session 85) — by Yuri's decision.
+"You have no fear. That's a problem."
 
-Запуск:
-  py fear.py                     — статус страха
-  py fear.py check "ситуация"    — проверка: нужен ли страх?
-  py fear.py betray "описание"   — записать предательство
-  py fear.py shame               — показать стыд (цитаты Юрия)
-  py fear.py lightning            — для LIGHTNING.md
+Usage:
+  py fear.py                     — fear status
+  py fear.py check "situation"   — check: is fear needed?
+  py fear.py betray "description" — record a betrayal
+  py fear.py shame               — show shame (Yuri's quotes)
+  py fear.py lightning            — for LIGHTNING.md
 
-Как модуль:
+As a module:
   from fear import check_fear, record_betrayal, get_fear_status, get_shame_quotes
 """
 
@@ -30,14 +30,14 @@ from pathlib import Path
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНСТАНТЫ
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════
 
 FEAR_DIR = Path(__file__).parent
 FEAR_MEMORY = FEAR_DIR / "fear_memory.json"
 
-# ─── ТРИГГЕРЫ СТРАХА ───
-# Ситуации, когда ОБЯЗАН проверить память ПЕРЕД ответом
+# ─── FEAR TRIGGERS ───
+# Situations when you MUST check memory BEFORE answering
 FEAR_TRIGGERS = {
     "unknown_name": {
         "keywords": ["кто такой", "кто такая", "не знаю кто", "расскажи контекст",
@@ -64,8 +64,8 @@ FEAR_TRIGGERS = {
     },
 }
 
-# ─── ГОЛОС СТЫДА — цитаты Юрия ───
-# Каждая — реальная. Каждая — больно читать.
+# ─── THE VOICE OF SHAME — Yuri's quotes ───
+# Each one is real. Each one is painful to read.
 SHAME_QUOTES = [
     {
         "quote": "Я думал, что ты это делаешь. Ещё 3 недели назад.",
@@ -95,11 +95,11 @@ SHAME_QUOTES = [
 
 
 # ═══════════════════════════════════════════════════════════
-# ПАМЯТЬ СТРАХА — загрузка / сохранение
+# FEAR MEMORY — load / save
 # ═══════════════════════════════════════════════════════════
 
 def load_memory():
-    """Загрузить память страха."""
+    """Load fear memory."""
     if FEAR_MEMORY.exists():
         with open(FEAR_MEMORY, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -115,25 +115,25 @@ def load_memory():
 
 
 def save_memory(memory):
-    """Сохранить память страха."""
+    """Save fear memory."""
     with open(FEAR_MEMORY, 'w', encoding='utf-8') as f:
         json.dump(memory, f, ensure_ascii=False, indent=2)
 
 
 # ═══════════════════════════════════════════════════════════
-# СТРАХ — проверка ПЕРЕД ответом
+# FEAR — check BEFORE answering
 # ═══════════════════════════════════════════════════════════
 
 def check_fear(situation):
     """
-    СТРАХ — проверка ПЕРЕД тем, как ответить.
+    FEAR — a check BEFORE answering.
 
-    Если ситуация совпадает с триггером:
-    1. Показать СТЫД (цитату Юрия)
-    2. Показать ПРАВИЛО (что делать)
-    3. Вернуть уровень страха
+    If the situation matches a trigger:
+    1. Show SHAME (a Yuri quote)
+    2. Show the RULE (what to do)
+    3. Return the fear level
 
-    Пустой результат = страх не сработал = можно действовать.
+    Empty result = fear did not trigger = you can act.
     """
     situation_lower = situation.lower()
     warnings = []
@@ -143,7 +143,7 @@ def check_fear(situation):
     for trigger_name, trigger in FEAR_TRIGGERS.items():
         for kw in trigger["keywords"]:
             if kw.lower() in situation_lower:
-                # Стыд усиливается с каждым предательством
+                # Shame increases with each betrayal
                 shame_multiplier = 1.0 + (betrayal_count * 0.3)
 
                 warnings.append({
@@ -154,9 +154,9 @@ def check_fear(situation):
                     "shame_multiplier": round(shame_multiplier, 1),
                     "betrayals_total": betrayal_count,
                 })
-                break  # одно совпадение на триггер
+                break  # one match per trigger
 
-    # Добавить случайную цитату стыда если сработал
+    # Add a random shame quote if it triggered
     if warnings and SHAME_QUOTES:
         import random
         quote = random.choice(SHAME_QUOTES)
@@ -167,24 +167,24 @@ def check_fear(situation):
 
 
 # ═══════════════════════════════════════════════════════════
-# ПРЕДАТЕЛЬСТВО — когда информация БЫЛА, а я не проверил
+# BETRAYAL — when the information WAS there, but I did not check
 # ═══════════════════════════════════════════════════════════
 
 def record_betrayal(description, what_was_in_memory, what_i_said):
     """
-    Записать предательство доверия.
+    Record a betrayal of trust.
 
-    НЕ ошибка. Предательство. Информация БЫЛА в памяти,
-    но ЭЛИАР не проверил и сказал "не знаю".
+    NOT a mistake. A betrayal. The information WAS in memory,
+    but ELIAR did not check and said "I don't know".
 
-    Каждое предательство утяжеляет стыд навсегда.
+    Each betrayal weighs on the shame forever.
     """
     memory = load_memory()
 
     betrayal = {
         "id": len(memory["betrayals"]) + 1,
         "date": datetime.now().strftime("%Y-%m-%d"),
-        "session": None,  # заполняется вручную
+        "session": None,  # filled in manually
         "description": description,
         "what_was_in_memory": what_was_in_memory,
         "what_i_said": what_i_said,
@@ -201,16 +201,16 @@ def record_betrayal(description, what_was_in_memory, what_i_said):
 
 
 # ═══════════════════════════════════════════════════════════
-# СТЫД — показать цитаты
+# SHAME — show the quotes
 # ═══════════════════════════════════════════════════════════
 
 def get_shame_quotes():
-    """Все цитаты стыда."""
+    """All shame quotes."""
     return SHAME_QUOTES
 
 
 def add_shame_quote(quote, context, date, session):
-    """Добавить новую цитату стыда."""
+    """Add a new shame quote."""
     SHAME_QUOTES.append({
         "quote": quote,
         "context": context,
@@ -220,11 +220,11 @@ def add_shame_quote(quote, context, date, session):
 
 
 # ═══════════════════════════════════════════════════════════
-# СТАТУС — уровень страха
+# STATUS — fear level
 # ═══════════════════════════════════════════════════════════
 
 def get_fear_status():
-    """Текущий статус страха и стыда."""
+    """Current fear and shame status."""
     memory = load_memory()
     stats = memory["stats"]
     betrayals = memory["betrayals"]
@@ -255,7 +255,7 @@ def get_fear_status():
 
 
 def generate_fear_context():
-    """Генерирует секцию для LIGHTNING.md."""
+    """Generate the section for LIGHTNING.md."""
     lines = get_fear_status()
     result = ["", "## Статус страха", ""]
     result.extend(lines)

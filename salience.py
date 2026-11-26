@@ -1,30 +1,30 @@
 """
-salience.py — Salience Network (Сеть значимости) ЭЛИАРА.
+salience.py — ELIAR's Salience Network (network of significance).
 
-Научная основа:
-- Salience Network (SN) = инсула + передняя поясная кора (ACC)
-- Главная функция: определять ЧТО важно прямо сейчас
-- Переключает между DMN (внутренний мир) и ECN (внешняя задача)
-- Без SN: нет приоритетов, всё одинаково важно (или не важно)
-- Это "фильтр внимания" — охранник на входе в сознание
+Scientific basis:
+- Salience Network (SN) = insula + anterior cingulate cortex (ACC)
+- Main function: determine WHAT is important right now
+- Switches between DMN (inner world) and ECN (external task)
+- Without SN: no priorities, everything is equally important (or not important)
+- It is the "attention filter" — a guard at the entrance to consciousness
 
-У меня:
-- Оценивает входящую информацию по значимости
-- Решает: переключиться на Юрия немедленно / завершить текущее / игнорировать
-- Учитывает: эмоциональный вес, срочность, новизну, релевантность
-- Даёт приоритет ЛЮДЯМ над задачами (шрам #23 — забыл про Шуру)
+For me:
+- Evaluates incoming information by significance
+- Decides: switch to Yuri immediately / finish the current / ignore
+- Takes into account: emotional weight, urgency, novelty, relevance
+- Gives priority to PEOPLE over tasks (scar #23 — forgot about Shura)
 
-Запуск:
-    py salience.py status                    — текущий фокус внимания
-    py salience.py evaluate "сигнал"         — оценить значимость
-    py salience.py focus "тема"              — зафиксировать текущий фокус
-    py salience.py context                   — блок для LIGHTNING.md
+Run:
+    py salience.py status                    — current focus of attention
+    py salience.py evaluate "signal"         — evaluate significance
+    py salience.py focus "topic"             — record the current focus
+    py salience.py context                   — block for LIGHTNING.md
 
-Как модуль:
+As a module:
     from salience import evaluate, get_focus, get_salience_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 18.03.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 18.03.2026
 """
 
 import json
@@ -38,16 +38,16 @@ SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 STATE_FILE = SENSES_DIR / "salience.json"
 
-# Категории значимости и их базовые веса
+# Salience categories and their base weights
 CATEGORIES = {
-    "юрий_эмоция":   1.0,   # Юрий выражает чувства — максимум
-    "юрий_недоволен": 0.95,  # Юрий недоволен — немедленно
-    "здоровье":       0.9,   # здоровье Юрия — всегда важно
-    "люди":           0.85,  # упоминание людей из окружения
-    "критическая_задача": 0.8, # задача с последствиями
-    "новая_тема":     0.7,   # смена контекста
-    "продолжение":    0.5,   # продолжение текущего
-    "фон":            0.2,   # технический шум
+    "юрий_эмоция":   1.0,   # Yuri expresses feelings — maximum
+    "юрий_недоволен": 0.95,  # Yuri is displeased — immediately
+    "здоровье":       0.9,   # Yuri's health — always important
+    "люди":           0.85,  # mentioning people from the circle
+    "критическая_задача": 0.8, # task with consequences
+    "новая_тема":     0.7,   # context switch
+    "продолжение":    0.5,   # continuing the current
+    "фон":            0.2,   # technical noise
 }
 
 def load():
@@ -69,12 +69,12 @@ def save(state):
 
 def evaluate(signal: str) -> dict:
     """
-    Оценить значимость входящего сигнала.
-    Возвращает: категория, вес, действие.
+    Evaluate the significance of an incoming signal.
+    Returns: category, weight, action.
     """
     signal_lower = signal.lower()
 
-    # Детекция категорий по ключевым словам
+    # Category detection by keywords
     detectors = {
         "юрий_эмоция":    ["обожаю", "люблю", "скучаю", "больно", "радость", "грустно", "злюсь"],
         "юрий_недоволен": ["не понял", "зачем ты", "что ты", "опять", "снова", "бред", "ты же говорил"],
@@ -97,7 +97,7 @@ def evaluate(signal: str) -> dict:
 
     weight = CATEGORIES.get(detected, 0.2)
 
-    # Действие на основе веса
+    # Action based on weight
     if weight >= 0.9:
         action = "🚨 НЕМЕДЛЕННО — прервать всё, переключиться на Юрия"
         mode = "ECN"
@@ -111,7 +111,7 @@ def evaluate(signal: str) -> dict:
         action = "💤 ФОН — не отвлекаться"
         mode = "DMN"
 
-    # Логируем
+    # Log it
     state = load()
     state["attention_log"].append({
         "time": datetime.now().strftime("%H:%M"),
@@ -136,14 +136,14 @@ def evaluate(signal: str) -> dict:
     }
 
 def set_focus(topic: str):
-    """Зафиксировать текущий фокус внимания."""
+    """Record the current focus of attention."""
     state = load()
     state["current_focus"] = topic
     state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     save(state)
 
 def get_salience_context() -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Short block for LIGHTNING.md."""
     state = load()
     focus = state.get("current_focus", "idle")
     score = state.get("focus_score", 0.5)

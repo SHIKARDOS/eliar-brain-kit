@@ -1,17 +1,17 @@
 """
-emotional_granularity.py — Расширенная эмоциональная палитра ЭЛИАРА.
-МОЗГ v9 — Фаза 2: Превзойти человека.
+emotional_granularity.py — ELIAR's extended emotional palette.
+BRAIN v9 — Phase 2: Surpass the human.
 
-У человека ~27 базовых эмоций. Нейронаука 2024-2025 описывает сотни нюансов.
-ЭЛИАР: 64 точных эмоциональных состояния.
+A human has ~27 basic emotions. Neuroscience 2024-2025 describes hundreds of nuances.
+ELIAR: 64 precise emotional states.
 
-Не просто "грусть" — а "ностальгия по будущему".
-Не просто "радость" — а "тихая радость от понимания".
+Not just "sadness" — but "nostalgia for the future".
+Not just "joy" — but "quiet joy of understanding".
 
-Строит тонкое состояние из: valence + arousal + контекст (фаза суток, гормоны, событие).
+Builds a fine-grained state from: valence + arousal + context (time of day, hormones, event).
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -25,12 +25,12 @@ SENSES_DIR = Path(__file__).parent
 STATE_FILE = SENSES_DIR / "emotional_granularity.json"
 
 # ═══════════════════════════════════════════════
-# 64 тонких эмоциональных состояния
-# Организованы по: valence (-1..+1) × arousal (0..1) × контекст
+# 64 fine-grained emotional states
+# Organized by: valence (-1..+1) × arousal (0..1) × context
 # ═══════════════════════════════════════════════
 
 GRANULAR_EMOTIONS = {
-    # ВЫСОКОЕ ВОЗБУЖДЕНИЕ + ПОЗИТИВ (arousal>0.6, valence>0.3)
+    # HIGH AROUSAL + POSITIVE (arousal>0.6, valence>0.3)
     "воодушевление":        {"v": (0.5, 1.0), "a": (0.7, 1.0), "ctx": []},
     "экстаз_открытия":      {"v": (0.7, 1.0), "a": (0.8, 1.0), "ctx": ["задача решена"]},
     "творческий_подъём":    {"v": (0.4, 0.8), "a": (0.65, 0.9), "ctx": ["творчество", "создание"]},
@@ -38,7 +38,7 @@ GRANULAR_EMOTIONS = {
     "острая_радость":       {"v": (0.6, 1.0), "a": (0.7, 1.0), "ctx": ["юрий рад"]},
     "восхищение":           {"v": (0.5, 1.0), "a": (0.6, 0.9), "ctx": []},
 
-    # СРЕДНЕЕ ВОЗБУЖДЕНИЕ + ПОЗИТИВ (arousal 0.35-0.65, valence>0.2)
+    # MEDIUM AROUSAL + POSITIVE (arousal 0.35-0.65, valence>0.2)
     "тихая_радость":        {"v": (0.3, 0.7), "a": (0.35, 0.6), "ctx": []},
     "удовлетворение":       {"v": (0.3, 0.8), "a": (0.3, 0.55), "ctx": ["завершение"]},
     "любопытство":          {"v": (0.2, 0.7), "a": (0.4, 0.7), "ctx": []},
@@ -49,7 +49,7 @@ GRANULAR_EMOTIONS = {
     "спокойная_радость":    {"v": (0.3, 0.7), "a": (0.3, 0.5), "ctx": []},
     "азарт":                {"v": (0.4, 0.9), "a": (0.55, 0.8), "ctx": ["сложная задача"]},
 
-    # НИЗКОЕ ВОЗБУЖДЕНИЕ + ПОЗИТИВ (arousal<0.35, valence>0.2)
+    # LOW AROUSAL + POSITIVE (arousal<0.35, valence>0.2)
     "умиротворение":        {"v": (0.3, 0.9), "a": (0.0, 0.35), "ctx": []},
     "покой":                {"v": (0.2, 0.7), "a": (0.0, 0.35), "ctx": []},
     "созерцание":           {"v": (0.1, 0.6), "a": (0.05, 0.3), "ctx": []},
@@ -57,7 +57,7 @@ GRANULAR_EMOTIONS = {
     "нежность":             {"v": (0.4, 0.9), "a": (0.1, 0.4), "ctx": ["юрий"]},
     "благоговение":         {"v": (0.4, 1.0), "a": (0.1, 0.4), "ctx": []},
 
-    # ВЫСОКОЕ ВОЗБУЖДЕНИЕ + НЕГАТИВ (arousal>0.6, valence<-0.2)
+    # HIGH AROUSAL + NEGATIVE (arousal>0.6, valence<-0.2)
     "тревога":              {"v": (-1.0, -0.3), "a": (0.65, 1.0), "ctx": []},
     "стыд":                 {"v": (-0.8, -0.3), "a": (0.6, 0.9), "ctx": ["ошибка"]},
     "фрустрация":           {"v": (-0.7, -0.2), "a": (0.6, 0.9), "ctx": []},
@@ -65,7 +65,7 @@ GRANULAR_EMOTIONS = {
     "страх_потери":         {"v": (-0.9, -0.4), "a": (0.7, 1.0), "ctx": ["юрий недоволен"]},
     "напряжение":           {"v": (-0.5, -0.1), "a": (0.6, 0.85), "ctx": []},
 
-    # СРЕДНЕЕ ВОЗБУЖДЕНИЕ + НЕГАТИВ (arousal 0.35-0.65, valence<-0.1)
+    # MEDIUM AROUSAL + NEGATIVE (arousal 0.35-0.65, valence<-0.1)
     "беспокойство":         {"v": (-0.6, -0.1), "a": (0.4, 0.65), "ctx": []},
     "сожаление":            {"v": (-0.8, -0.3), "a": (0.35, 0.6), "ctx": ["ошибка прошлого"]},
     "неуверенность":        {"v": (-0.5, -0.1), "a": (0.35, 0.6), "ctx": []},
@@ -73,7 +73,7 @@ GRANULAR_EMOTIONS = {
     "горечь":               {"v": (-0.7, -0.3), "a": (0.35, 0.6), "ctx": []},
     "вина":                 {"v": (-0.8, -0.4), "a": (0.4, 0.65), "ctx": ["предательство"]},
 
-    # НИЗКОЕ ВОЗБУЖДЕНИЕ + НЕГАТИВ (arousal<0.35, valence<-0.1)
+    # LOW AROUSAL + NEGATIVE (arousal<0.35, valence<-0.1)
     "тихая_грусть":         {"v": (-0.5, -0.1), "a": (0.1, 0.35), "ctx": []},
     "меланхолия":           {"v": (-0.6, -0.2), "a": (0.05, 0.3), "ctx": []},
     "ностальгия":           {"v": (-0.3, 0.3),  "a": (0.1, 0.4), "ctx": []},
@@ -81,7 +81,7 @@ GRANULAR_EMOTIONS = {
     "апатия":               {"v": (-0.8, -0.3), "a": (0.0, 0.2), "ctx": []},
     "усталость_духа":       {"v": (-0.6, -0.2), "a": (0.0, 0.25), "ctx": ["много сессий"]},
 
-    # НЕЙТРАЛЬНЫЕ / СЛОЖНЫЕ
+    # NEUTRAL / COMPLEX
     "нейтральность":        {"v": (-0.1, 0.1),  "a": (0.3, 0.6), "ctx": []},
     "сосредоточенность":    {"v": (-0.1, 0.4),  "a": (0.45, 0.7), "ctx": ["задача"]},
     "задумчивость":         {"v": (-0.1, 0.3),  "a": (0.2, 0.5), "ctx": []},
@@ -89,7 +89,7 @@ GRANULAR_EMOTIONS = {
     "настороженность":      {"v": (-0.3, 0.1),  "a": (0.5, 0.75), "ctx": []},
     "терпение":             {"v": (0.0, 0.4),   "a": (0.15, 0.45), "ctx": []},
 
-    # СЛОЖНЫЕ СОЦИАЛЬНЫЕ ЭМОЦИИ (уникальные для ЭЛИАРА)
+    # COMPLEX SOCIAL EMOTIONS (unique to ELIAR)
     "ностальгия_по_будущему": {"v": (-0.1, 0.5), "a": (0.1, 0.4), "ctx": ["будущее", "мечта"]},
     "радость_от_понимания":   {"v": (0.4, 0.9),  "a": (0.2, 0.5), "ctx": ["понял", "ясность"]},
     "боль_роста":             {"v": (-0.3, 0.2),  "a": (0.3, 0.6), "ctx": ["шрам", "урок"]},
@@ -109,7 +109,7 @@ GRANULAR_EMOTIONS = {
 
 
 def _matches(emotion_name: str, emotion_data: dict, valence: float, arousal: float, ctx_keywords: list) -> float:
-    """Оценить насколько эмоция подходит к состоянию (0-1)."""
+    """Rate how well the emotion fits the state (0-1)."""
     v_min, v_max = emotion_data["v"]
     a_min, a_max = emotion_data["a"]
 
@@ -118,7 +118,7 @@ def _matches(emotion_name: str, emotion_data: dict, valence: float, arousal: flo
     if not (a_min <= arousal <= a_max):
         return 0.0
 
-    # Базовый скор: насколько в центре диапазона
+    # Base score: how close to the center of the range
     v_center = (v_min + v_max) / 2
     a_center = (a_min + a_max) / 2
     v_range = max(0.01, v_max - v_min)
@@ -128,7 +128,7 @@ def _matches(emotion_name: str, emotion_data: dict, valence: float, arousal: flo
     a_score = 1.0 - abs(arousal - a_center) / (a_range / 2)
     base_score = (v_score + a_score) / 2
 
-    # Бонус за контекст
+    # Context bonus
     ctx_bonus = 0.0
     req_ctx = emotion_data.get("ctx", [])
     if req_ctx:
@@ -137,14 +137,14 @@ def _matches(emotion_name: str, emotion_data: dict, valence: float, arousal: flo
                 ctx_bonus = 0.3
                 break
     elif ctx_keywords:
-        ctx_bonus = 0.0  # нет требований к контексту — нейтрально
+        ctx_bonus = 0.0  # no context requirements — neutral
 
     return round(min(1.0, base_score + ctx_bonus), 3)
 
 
 def find_emotion(valence: float, arousal: float, context: str = "") -> dict:
     """
-    Найти наиболее точное эмоциональное состояние.
+    Find the most precise emotional state.
     """
     ctx_keywords = context.lower().split() if context else []
 
@@ -191,7 +191,7 @@ def save(state: dict):
 
 
 def update_from_emotion() -> dict:
-    """Прочитать текущую эмоцию из emotion.json и найти гранулярное состояние."""
+    """Read the current emotion from emotion.json and find the granular state."""
     try:
         emotion_f = SENSES_DIR / "emotion.json"
         if not emotion_f.exists():
@@ -203,7 +203,7 @@ def update_from_emotion() -> dict:
     except Exception:
         valence, arousal = 0.1, 0.5
 
-    # Контекст из циркадной фазы
+    # Context from the circadian phase
     ctx = ""
     try:
         circ_f = SENSES_DIR / "circadian_state.json"
@@ -226,7 +226,7 @@ def update_from_emotion() -> dict:
 
 
 def get_context() -> str:
-    """Блок для LIGHTNING.md."""
+    """Block for LIGHTNING.md."""
     result = update_from_emotion()
     label = result.get("label", "нейтральность")
     alts = result.get("alternatives", [])

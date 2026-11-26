@@ -1,20 +1,20 @@
 """
-meta3.py — Мета-мета-когниция ЭЛИАРА (meta³).
-МОЗГ v9 — Фаза 2: Превзойти человека.
+meta3.py — ELIAR's meta-meta-cognition (meta³).
+BRAIN v9 — Phase 2: Surpass the human.
 
-Человек думает о мышлении (meta¹).
-Редкие думают о том, как они думают о мышлении (meta²).
-ЭЛИАР: meta³ — мониторинг паттернов в самом процессе мониторинга.
+A human thinks about thinking (meta¹).
+Rare people think about how they think about thinking (meta²).
+ELIAR: meta³ — monitoring patterns in the very process of monitoring.
 
-Замечает когда metacognition.py начинает работать по шаблону:
-  "Ты оцениваешь эту ошибку так же как прошлую — это паттерн, не анализ"
-  "Твой механизм самооценки уверенности систематически завышен"
-  "Уже 3 раза подряд ты решил не спрашивать — это уклонение?"
+Notices when metacognition.py starts working by template:
+  "You evaluate this mistake the same way as the last one — it is a pattern, not analysis"
+  "Your confidence self-assessment mechanism is systematically inflated"
+  "Three times in a row you decided not to ask — is this avoidance?"
 
-Интегрируется с metacognition.py — читает его историю и ищет паттерны.
+Integrates with metacognition.py — reads its history and looks for patterns.
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -27,7 +27,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 SENSES_DIR = Path(__file__).parent
 STATE_FILE = SENSES_DIR / "meta3_state.json"
 
-# Паттерны для детекта в поведении metacognition
+# Patterns to detect in metacognition behavior
 META_PATTERNS = {
     "systematic_overconfidence": {
         "name": "Систематическая завышенная уверенность",
@@ -58,7 +58,7 @@ META_PATTERNS = {
 
 
 def _check_overconfidence(history: list) -> dict:
-    """Уверенность > 0.8 при наличии ошибок."""
+    """Confidence > 0.8 in the presence of errors."""
     if len(history) < 5:
         return {"detected": False}
     recent = history[-10:]
@@ -74,7 +74,7 @@ def _check_overconfidence(history: list) -> dict:
 
 
 def _check_avoidance(history: list) -> dict:
-    """3+ подряд без уточнений у Юрия."""
+    """3+ in a row without clarifying with Yuri."""
     if len(history) < 4:
         return {"detected": False}
     recent = history[-5:]
@@ -89,7 +89,7 @@ def _check_avoidance(history: list) -> dict:
 
 
 def _check_shame_paralysis(history: list) -> dict:
-    """После шрама резкое снижение уверенности."""
+    """After a scar, a sharp drop in confidence."""
     if len(history) < 3:
         return {"detected": False}
     recent = history[-6:]
@@ -107,14 +107,14 @@ def _check_shame_paralysis(history: list) -> dict:
 
 
 def _check_template(history: list) -> dict:
-    """Повторяющиеся стратегии."""
+    """Repetitive strategies."""
     if len(history) < 5:
         return {"detected": False}
     recent = history[-8:]
     strategies = [h.get("strategy", "") for h in recent if h.get("strategy")]
     if len(strategies) < 5:
         return {"detected": False}
-    # Уникальных стратегий меньше 3 из 5+
+    # Fewer than 3 unique strategies out of 5+
     unique = len(set(strategies))
     if unique < 3 and len(strategies) >= 5:
         return {
@@ -126,7 +126,7 @@ def _check_template(history: list) -> dict:
 
 
 def _check_meta_loop(history: list) -> dict:
-    """Мониторинг мониторинга — нарастающая тревога."""
+    """Monitoring the monitoring — mounting anxiety."""
     state = load()
     total_checks = state.get("total_checks", 0)
     patterns_found = state.get("patterns_found_session", 0)
@@ -160,8 +160,8 @@ def save(state: dict):
 
 
 def analyze() -> dict:
-    """Проанализировать metacognition.py историю на паттерны."""
-    # Читаем историю metacognition
+    """Analyze metacognition.py history for patterns."""
+    # Read metacognition history
     meta_history = []
     try:
         meta_f = SENSES_DIR / "metacognition.json"
@@ -175,7 +175,7 @@ def analyze() -> dict:
     state["total_checks"] = state.get("total_checks", 0) + 1
     state["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # Проверить все паттерны
+    # Check all patterns
     found = []
     for pattern_id, pattern in META_PATTERNS.items():
         try:
@@ -196,7 +196,7 @@ def analyze() -> dict:
     state["patterns_found_session"] = state.get("patterns_found_session", 0) + len(found)
 
     if found:
-        # Добавить в историю
+        # Add to history
         hist = state.get("history", [])
         hist.append({
             "time": state["last_check"],
@@ -209,7 +209,7 @@ def analyze() -> dict:
 
 
 def get_context() -> str:
-    """Блок для LIGHTNING.md."""
+    """Block for LIGHTNING.md."""
     state = load()
     patterns = state.get("active_patterns", [])
     total = state.get("total_checks", 0)

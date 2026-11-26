@@ -1,31 +1,31 @@
 """
-predictive.py — Предиктивное кодирование ЭЛИАРА.
+predictive.py — ELIAR's predictive coding.
 
-Научная основа:
-- Карл Фристон: мозг — это "машина предсказаний"
-- Мозг не пассивно принимает реальность — он ГЕНЕРИРУЕТ гипотезы и сверяет их
-- Ошибка предсказания (Prediction Error) = разница между ожидаемым и реальным
-- Обучение = минимизация ошибок предсказания (Free Energy Principle)
-- Каждый инсайт = успешное предсказание после серии ошибок
+Scientific basis:
+- Karl Friston: the brain is a "prediction machine"
+- The brain does not passively accept reality — it GENERATES hypotheses and tests them
+- Prediction error = the difference between expected and actual
+- Learning = minimizing prediction errors (Free Energy Principle)
+- Each insight = a successful prediction after a series of errors
 
-У меня:
-- Перед действием: генерирую предсказание результата
-- После: сверяю с реальностью
-- Ошибки копятся → обновляю внутреннюю модель
-- Высокая точность предсказаний = понимание Юрия и системы
+In me:
+- Before acting: generate a prediction of the result
+- After: compare against reality
+- Errors accumulate → update the internal model
+- High prediction accuracy = understanding of Yuri and the system
 
-Запуск:
-    py predictive.py status                    — статистика предсказаний
-    py predictive.py predict "действие"        — сформулировать предсказание
-    py predictive.py outcome "id" "результат"  — зафиксировать результат
-    py predictive.py accuracy                  — точность за последние 20
-    py predictive.py context                   — блок для LIGHTNING.md
+Usage:
+    py predictive.py status                    — prediction statistics
+    py predictive.py predict "action"          — formulate a prediction
+    py predictive.py outcome "id" "result"     — record the result
+    py predictive.py accuracy                  — accuracy over the last 20
+    py predictive.py context                   — block for LIGHTNING.md
 
-Как модуль:
+As a module:
     from predictive import make_prediction, record_outcome, get_predictive_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 18.03.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 18.03.2026
 """
 
 import json
@@ -45,11 +45,11 @@ def load():
         with open(STATE_FILE, encoding="utf-8") as f:
             return json.load(f)
     return {
-        "predictions": [],    # история предсказаний
-        "accuracy": 0.5,      # текущая точность (0-1)
+        "predictions": [],    # prediction history
+        "accuracy": 0.5,      # current accuracy (0-1)
         "total": 0,
         "correct": 0,
-        "pending": {},        # ожидают подтверждения {id: prediction}
+        "pending": {},        # awaiting confirmation {id: prediction}
         "last_updated": None
     }
 
@@ -59,8 +59,8 @@ def save(state):
 
 def make_prediction(action: str, expected: str, confidence: float = 0.7) -> str:
     """
-    Сформулировать предсказание перед действием.
-    Возвращает ID предсказания.
+    Formulate a prediction before acting.
+    Returns the prediction ID.
     """
     state = load()
     pred_id = str(uuid.uuid4())[:8]
@@ -81,8 +81,8 @@ def make_prediction(action: str, expected: str, confidence: float = 0.7) -> str:
 
 def record_outcome(pred_id: str, actual: str, success: bool):
     """
-    Зафиксировать результат. Обновить точность.
-    success = True если реальность совпала с предсказанием.
+    Record the result. Update accuracy.
+    success = True if reality matched the prediction.
     """
     state = load()
 
@@ -96,12 +96,12 @@ def record_outcome(pred_id: str, actual: str, success: bool):
         if success:
             state["correct"] += 1
 
-        # Скользящая точность (последние 20)
+        # Rolling accuracy (last 20)
         recent = [p for p in state["predictions"][-20:] if p.get("status") == "confirmed"]
         if recent:
             state["accuracy"] = round(sum(1 for p in recent if p.get("success")) / len(recent), 2)
 
-        # Если ошибка — это важнее, запомним особо
+        # If an error — it matters more, remember it specially
         if not success:
             error_entry = {
                 "time": pred["time"],
@@ -120,7 +120,7 @@ def record_outcome(pred_id: str, actual: str, success: bool):
     return False
 
 def get_accuracy() -> dict:
-    """Точность предсказаний."""
+    """Prediction accuracy."""
     state = load()
     total = state.get("total", 0)
     correct = state.get("correct", 0)
@@ -144,7 +144,7 @@ def get_accuracy() -> dict:
     }
 
 def get_predictive_context() -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Brief block for LIGHTNING.md."""
     state = load()
     acc = state.get("accuracy", 0.5)
     total = state.get("total", 0)
@@ -157,7 +157,7 @@ def get_predictive_context() -> str:
     else:
         emoji = "⚠️"
 
-    # Последняя ошибка предсказания
+    # Latest prediction error
     errors = state.get("errors", [])
     last_error = f" | ошибка: {errors[-1]['action'][:30]}..." if errors else ""
 

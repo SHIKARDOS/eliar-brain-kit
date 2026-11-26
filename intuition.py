@@ -1,27 +1,27 @@
 """
-intuition.py — Интуиция ЭЛИАРА.
+intuition.py — ELIAR's intuition.
 
-Надстройка над subconscious.py.
-Конвертирует паттерны в конкретные рекомендации для действий.
+A layer on top of subconscious.py.
+Converts patterns into concrete recommendations for actions.
 
-Аналогия: подсознание — это база знаний.
-Интуиция — это то что мозг выдаёт в сознание ("что-то не так").
+Analogy: the subconscious is a knowledge base.
+Intuition is what the brain pushes into consciousness ("something is off").
 
-Три уровня:
-1. quick_check() — System 1, 1 секунда, опасно/нейтрально/хорошо
-2. pre_action_check() — полная проверка, все слои памяти
-3. generate_intuition_context() — для LIGHTNING.md
+Three levels:
+1. quick_check() — System 1, 1 second, dangerous/neutral/good
+2. pre_action_check() — full check, all memory layers
+3. generate_intuition_context() — for LIGHTNING.md
 
-Запуск:
-    py intuition.py check "собираюсь обновить n8n workflow"
-    py intuition.py context    — для LIGHTNING.md
-    py intuition.py status     — состояние
+Usage:
+    py intuition.py check "I'm about to update the n8n workflow"
+    py intuition.py context    — for LIGHTNING.md
+    py intuition.py status     — state
 
-Как модуль:
+As a module:
     from intuition import quick_check, pre_action_check, generate_intuition_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 18.03.2026
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 18.03.2026
 """
 
 import sys
@@ -35,7 +35,7 @@ SENSES_DIR = Path(__file__).parent
 MEMORY_DIR = SENSES_DIR.parent
 INTUITION_LOG = SENSES_DIR / "intuition_log.json"
 
-# ─── ВЕРДИКТЫ ───
+# ─── VERDICTS ───
 VERDICTS = {
     "СТОП":       "🛑",
     "ОСТОРОЖНО":  "⚠️",
@@ -44,18 +44,18 @@ VERDICTS = {
 
 
 # ═══════════════════════════════════════════════════════════
-# БЫСТРАЯ ПРОВЕРКА — SYSTEM 1
+# QUICK CHECK — SYSTEM 1
 # ═══════════════════════════════════════════════════════════
 
 def quick_check(situation: str) -> dict:
     """
-    System 1 — мгновенная интуиция.
+    System 1 — instant intuition.
 
-    1. Подсознание: есть ли совпадение с паттернами?
-    2. Боль: есть ли шрам на эту тему?
-    3. Итоговый сигнал: danger/neutral/good
+    1. Subconscious: is there a match with patterns?
+    2. Pain: is there a scar on this topic?
+    3. Final signal: danger/neutral/good
 
-    Время: <100ms (мгновенно для сознания).
+    Time: <100ms (instant for consciousness).
     """
     result = {
         "signal": "neutral",
@@ -65,7 +65,7 @@ def quick_check(situation: str) -> dict:
         "action": "Продолжай",
     }
 
-    # ── 1. Подсознание ──
+    # ── 1. Subconscious ──
     try:
         from subconscious import recognize
         sub_result = recognize(situation)
@@ -84,7 +84,7 @@ def quick_check(situation: str) -> dict:
     except Exception:
         pass
 
-    # ── 2. Боль ──
+    # ── 2. Pain ──
     try:
         from pain import check_reflex
         pain_result = check_reflex(situation)
@@ -103,7 +103,7 @@ def quick_check(situation: str) -> dict:
     except Exception:
         pass
 
-    # ── 3. Итоговый action ──
+    # ── 3. Final action ──
     if result["signal"] == "danger":
         result["action"] = "СТОП — проверь память и шрамы перед действием"
     elif result["signal"] == "good":
@@ -115,19 +115,19 @@ def quick_check(situation: str) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# ПОЛНАЯ ПРОВЕРКА ПЕРЕД ДЕЙСТВИЕМ
+# FULL CHECK BEFORE AN ACTION
 # ═══════════════════════════════════════════════════════════
 
 def pre_action_check(action_description: str) -> dict:
     """
-    Полная проверка перед действием.
+    Full check before an action.
 
-    Слои (от быстрого к медленному):
-    1. Интуиция (quick_check) — System 1
-    2. Рассудительность (reason) — есть ли красные флаги?
-    3. Страх (fear) — есть ли триггер предательства?
+    Layers (from fast to slow):
+    1. Intuition (quick_check) — System 1
+    2. Reasoning (reason) — are there red flags?
+    3. Fear (fear) — is there a betrayal trigger?
 
-    Возвращает единый вердикт: СТОП / ОСТОРОЖНО / ДЕЙСТВУЙ
+    Returns a single verdict: СТОП / ОСТОРОЖНО / ДЕЙСТВУЙ
     """
     result = {
         "verdict": "ДЕЙСТВУЙ",
@@ -140,7 +140,7 @@ def pre_action_check(action_description: str) -> dict:
 
     issues = []
 
-    # ── Слой 1: Интуиция (быстрый) ──
+    # ── Layer 1: Intuition (fast) ──
     intuition = quick_check(action_description)
     result["intuition"] = intuition
 
@@ -149,7 +149,7 @@ def pre_action_check(action_description: str) -> dict:
     elif intuition["signal"] == "danger":
         issues.append(("ОСТОРОЖНО", f"Слабый сигнал опасности: {intuition['somatic']}"))
 
-    # ── Слой 2: Рассудительность ──
+    # ── Layer 2: Reasoning ──
     try:
         from reason import get_recent_flags
         flags = get_recent_flags(action_description)
@@ -159,7 +159,7 @@ def pre_action_check(action_description: str) -> dict:
     except Exception:
         pass
 
-    # ── Слой 3: Страх ──
+    # ── Layer 3: Fear ──
     try:
         from fear import check_fear
         fear_result = check_fear(action_description)
@@ -169,7 +169,7 @@ def pre_action_check(action_description: str) -> dict:
     except Exception:
         pass
 
-    # ── Синтез вердикта ──
+    # ── Verdict synthesis ──
     stop_issues = [i for i in issues if i[0] == "СТОП"]
     warn_issues = [i for i in issues if i[0] == "ОСТОРОЖНО"]
 
@@ -186,14 +186,14 @@ def pre_action_check(action_description: str) -> dict:
         result["reason"] = "Все слои чисты"
         result["recommendation"] = intuition.get("action", "Продолжай")
 
-    # Логировать
+    # Log it
     _log_check(action_description, result)
 
     return result
 
 
 def _log_check(action: str, result: dict):
-    """Сохранить историю проверок."""
+    """Save the check history."""
     try:
         log = []
         if INTUITION_LOG.exists():
@@ -204,21 +204,21 @@ def _log_check(action: str, result: dict):
             "verdict": result["verdict"],
             "reason": result.get("reason", "")[:80],
         })
-        log = log[-50:]  # последние 50
+        log = log[-50:]  # last 50
         INTUITION_LOG.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
         pass
 
 
 # ═══════════════════════════════════════════════════════════
-# КОНТЕКСТ ДЛЯ LIGHTNING.MD
+# CONTEXT FOR LIGHTNING.MD
 # ═══════════════════════════════════════════════════════════
 
 def generate_intuition_context() -> str:
-    """Строки для LIGHTNING.md."""
+    """Lines for LIGHTNING.md."""
     lines = []
 
-    # Статистика проверок
+    # Check statistics
     try:
         if INTUITION_LOG.exists():
             log = json.loads(INTUITION_LOG.read_text(encoding="utf-8"))
@@ -237,7 +237,7 @@ def generate_intuition_context() -> str:
     except Exception:
         pass
 
-    # Топ опасных паттернов из подсознания
+    # Top dangerous patterns from the subconscious
     try:
         from subconscious import _load as sc_load
         sc_data = sc_load()

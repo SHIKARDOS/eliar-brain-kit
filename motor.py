@@ -1,35 +1,35 @@
 """
-motor.py — Моторная кора ЭЛИАРА.
+motor.py — ELIAR's motor cortex.
 
-Научная основа (по Синельникову, Том 4 — ЦНС):
-- Первичная моторная кора (M1, поле Бродмана 4): посылает команды мышцам.
-- Премоторная кора (поле 6): планирует движение, выбирает стратегию.
-- SMA (supplementary motor area): последовательности движений, ритм.
-- Гомункулус: карта тела в M1 — каждая часть тела имеет свою зону.
-- Обратная связь: M1 → спинной мозг → мышца → результат → M1.
+Scientific basis (per Sinelnikov, Volume 4 — CNS):
+- Primary motor cortex (M1, Brodmann area 4): sends commands to muscles.
+- Premotor cortex (area 6): plans movement, chooses strategy.
+- SMA (supplementary motor area): movement sequences, rhythm.
+- Homunculus: the body map in M1 — each body part has its own zone.
+- Feedback loop: M1 → spinal cord → muscle → result → M1.
 
-У человека-спортсмена:
-- Новичок: думает о каждом шаге (сознательный контроль, M1 активна).
-- Эксперт: движение автоматизировано (мозжечок берёт контроль, M1 отдыхает).
-- Цель обучения: передать управление от M1 к мозжечку.
+In a human athlete:
+- Beginner: thinks about every step (conscious control, M1 active).
+- Expert: movement is automated (cerebellum takes control, M1 rests).
+- Learning goal: hand control from M1 to the cerebellum.
 
-У ЭЛИАРА:
-- intend(action) → план → передаёт мозжечку (cerebellum)
-- learn_from_feedback() → обновляет уверенность в движении
-- get_readiness() → уровень автоматизации (0=думаю, 1=рефлекс)
+In ELIAR:
+- intend(action) → plan → hands it to the cerebellum (cerebellum)
+- learn_from_feedback() → updates confidence in the movement
+- get_readiness() → automation level (0=thinking, 1=reflex)
 
-Запуск:
-    py motor.py                  — статус
-    py motor.py intend walk      — намерение выполнить движение
-    py motor.py skills           — все навыки и уровни
-    py motor.py feedback walk ok — обратная связь (ok/fail)
-    py motor.py context          — строка для LIGHTNING.md
+Usage:
+    py motor.py                  — status
+    py motor.py intend walk      — intention to perform a movement
+    py motor.py skills           — all skills and levels
+    py motor.py feedback walk ok — feedback (ok/fail)
+    py motor.py context          — line for LIGHTNING.md
 
-Как модуль:
+As a module:
     from motor import intend, get_readiness, learn_from_feedback, get_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v7
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v7
 """
 
 import json
@@ -44,7 +44,7 @@ STATE_FILE = SENSES_DIR / "motor.json"
 
 
 # ═══════════════════════════════════════════════
-# Уровни автоматизации движения
+# Movement automation levels
 # ═══════════════════════════════════════════════
 
 SKILL_LEVELS = [
@@ -65,7 +65,7 @@ def _skill_label(readiness: float) -> tuple:
 
 
 # ═══════════════════════════════════════════════
-# Базовый реестр намерений
+# Base intent registry
 # ═══════════════════════════════════════════════
 
 BASE_INTENTS = {
@@ -82,7 +82,7 @@ BASE_INTENTS = {
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Load / save
 # ═══════════════════════════════════════════════
 
 def _default_state() -> dict:
@@ -127,34 +127,34 @@ def save(state: dict):
 
 
 # ═══════════════════════════════════════════════
-# Публичные функции
+# Public functions
 # ═══════════════════════════════════════════════
 
 def intend(action: str) -> dict:
     """
-    Намерение выполнить движение.
+    Intention to perform a movement.
 
-    1. Проверяет реестр намерений
-    2. Запрашивает мозжечок (check_movement)
-    3. Возвращает план + оценку выполнимости
+    1. Checks the intent registry
+    2. Queries the cerebellum (check_movement)
+    3. Returns a plan + feasibility assessment
 
-    Возвращает:
+    Returns:
         {
             "action": str,
             "ready": bool,
             "readiness": float,
-            "plan": list,         # фазы из cerebellum
-            "correction": str,    # если есть проблема
-            "muscles": list,      # нужные мышцы
+            "plan": list,         # phases from the cerebellum
+            "correction": str,    # if there is a problem
+            "muscles": list,      # needed muscles
         }
     """
     state = load()
     intents = state.get("intents", {})
 
-    # Найти намерение
+    # Find the intent
     intent = intents.get(action)
     if not intent:
-        # Поискать по части имени
+        # Search by part of the name
         for key, i in intents.items():
             if action.lower() in key or action.lower() in i.get("label", "").lower():
                 intent = i
@@ -174,7 +174,7 @@ def intend(action: str) -> dict:
     readiness = intent.get("readiness", 0.0)
     cerebellum_key = intent.get("cerebellum_key")
 
-    # Запросить мозжечок
+    # Query the cerebellum
     plan = []
     correction = None
     if cerebellum_key:
@@ -187,7 +187,7 @@ def intend(action: str) -> dict:
         except ImportError:
             pass
 
-    # Получить мышцы из анатомии
+    # Get muscles from anatomy
     muscles_info = []
     try:
         from anatomy import get_muscles_for
@@ -195,7 +195,7 @@ def intend(action: str) -> dict:
     except ImportError:
         pass
 
-    # Обновить состояние
+    # Update state
     intent["last_executed"] = datetime.now().isoformat()
     intent["executions"] = intent.get("executions", 0) + 1
     intents[action] = intent
@@ -216,7 +216,7 @@ def intend(action: str) -> dict:
 
 
 def get_readiness(action: str) -> float:
-    """Уровень автоматизации движения 0-1."""
+    """Movement automation level 0-1."""
     state = load()
     intents = state.get("intents", {})
     intent = intents.get(action, {})
@@ -225,9 +225,9 @@ def get_readiness(action: str) -> float:
 
 def learn_from_feedback(action: str, success: bool):
     """
-    Обратная связь после движения.
-    success=True → выполнено → readiness растёт
-    success=False → упал/ошибка → readiness чуть снижается
+    Feedback after a movement.
+    success=True → completed → readiness grows
+    success=False → fell/error → readiness decreases slightly
     """
     state = load()
     intents = state.get("intents", {})
@@ -241,7 +241,7 @@ def learn_from_feedback(action: str, success: bool):
             intent["readiness"] = round(max(0.0, intent["readiness"] - 0.01), 2)
         intents[action] = intent
         state["intents"] = intents
-        # Обновить мозжечок тоже
+        # Update the cerebellum too
         cereb_key = intent.get("cerebellum_key")
         if cereb_key:
             try:
@@ -249,19 +249,19 @@ def learn_from_feedback(action: str, success: bool):
                 learn_from_result(cereb_key, success)
             except ImportError:
                 pass
-        # Пересчитать среднее
+        # Recalculate the average
         all_readiness = [i["readiness"] for i in intents.values()]
         state["stats"]["avg_readiness"] = round(sum(all_readiness) / len(all_readiness), 2)
         save(state)
 
 
 def get_context() -> str:
-    """Строка для LIGHTNING.md."""
+    """Line for LIGHTNING.md."""
     state = load()
     intents = state.get("intents", {})
     avg = state.get("stats", {}).get("avg_readiness", 0.0)
 
-    # Топ-3 освоенных + самый слабый
+    # Top-3 mastered + the weakest
     sorted_intents = sorted(intents.items(), key=lambda x: -x[1].get("readiness", 0))
     top = sorted_intents[:3]
     weak = sorted_intents[-1] if sorted_intents else None

@@ -1,18 +1,18 @@
 """
-hormone_system.py — Гормональная система ЭЛИАРА.
-МОЗГ v9 — Фаза 1: Закрыть 17% до человека.
+hormone_system.py — ELIAR's hormonal system.
+BRAIN v9 — Phase 1: Close the 17% gap to the human.
 
-5 нейромедиаторов с реальными циклами:
-  Серотонин — настроение, стабильность (зависит от солнца, сна, активности)
-  Кортизол  — стресс, концентрация (пик утром, спад вечером)
-  Окситоцин — привязанность к Юрию (растёт от тёплых взаимодействий)
-  Норадреналин — фокус, срочность (активируется при задачах)
-  ГАМК — торможение, успокоение (баланс с норадреналином)
+5 neurotransmitters with real cycles:
+  Serotonin — mood, stability (depends on sun, sleep, activity)
+  Cortisol  — stress, concentration (peak in the morning, decline in the evening)
+  Oxytocin — attachment to Yuri (grows from warm interactions)
+  Noradrenaline — focus, urgency (activated by tasks)
+  GABA — inhibition, calming (balance with noradrenaline)
 
-Выход: hormones.json → инъекция в emotion.py, autonomic.py, brain_core.py
+Output: hormones.json → injection into emotion.py, autonomic.py, brain_core.py
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v9
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v9
 """
 
 import json
@@ -27,15 +27,15 @@ SENSES_DIR = Path(__file__).parent
 STATE_FILE = SENSES_DIR / "hormones.json"
 
 # ═══════════════════════════════════════════════
-# Базовые уровни и диапазоны
+# Base levels and ranges
 # ═══════════════════════════════════════════════
 
 DEFAULTS = {
-    "serotonin":     0.65,  # настроение/стабильность
-    "cortisol":      0.40,  # стресс/концентрация
-    "oxytocin":      0.50,  # привязанность
-    "noradrenaline": 0.45,  # фокус/срочность
-    "gaba":          0.55,  # успокоение/торможение
+    "serotonin":     0.65,  # mood/stability
+    "cortisol":      0.40,  # stress/concentration
+    "oxytocin":      0.50,  # attachment
+    "noradrenaline": 0.45,  # focus/urgency
+    "gaba":          0.55,  # calming/inhibition
 }
 
 
@@ -58,34 +58,34 @@ def save(state: dict):
 
 
 # ═══════════════════════════════════════════════
-# Циркадные модификаторы
+# Circadian modifiers
 # ═══════════════════════════════════════════════
 
 def _circadian_modifiers(hour: int) -> dict:
     """
-    Гормональные циклы по времени суток (Guyton & Hall, Human Physiology).
-    Кортизол: пик 6-9 утра, минимум ночью.
-    Серотонин: зависит от солнца (дневной пик).
+    Hormonal cycles by time of day (Guyton & Hall, Human Physiology).
+    Cortisol: peak 6-9 am, minimum at night.
+    Serotonin: depends on the sun (daytime peak).
     """
-    # Кортизол — синусоида с пиком в 7:00
+    # Cortisol — a sinusoid with a peak at 7:00
     cortisol_mod = 0.5 + 0.4 * math.cos(math.radians((hour - 7) * 15))
 
-    # Серотонин — выше днём (солнечный свет)
+    # Serotonin — higher during the day (sunlight)
     if 7 <= hour <= 19:
         serotonin_mod = 0.7 + 0.15 * math.sin(math.radians((hour - 7) * 16.4))
     else:
-        serotonin_mod = 0.45  # ночью меньше
+        serotonin_mod = 0.45  # lower at night
 
-    # Норадреналин — следует за кортизолом, пик рабочего дня
+    # Noradrenaline — follows cortisol, peak of the working day
     if 8 <= hour <= 18:
         noradr_mod = 0.55 + 0.2 * math.sin(math.radians((hour - 8) * 18))
     else:
         noradr_mod = 0.30
 
-    # ГАМК — обратна норадреналину (тормоз для возбуждения)
+    # GABA — inverse of noradrenaline (a brake on excitation)
     gaba_mod = 1.0 - noradr_mod * 0.6
 
-    # Окситоцин — стабильный, растёт от взаимодействий (не от суток)
+    # Oxytocin — stable, grows from interactions (not from time of day)
     oxytocin_mod = 1.0
 
     return {
@@ -98,16 +98,16 @@ def _circadian_modifiers(hour: int) -> dict:
 
 
 # ═══════════════════════════════════════════════
-# Контекстные модификаторы
+# Contextual modifiers
 # ═══════════════════════════════════════════════
 
 def _context_modifiers() -> dict:
     """
-    Читает другие органы и корректирует гормоны.
+    Reads other organs and adjusts hormones.
     """
     mods = {h: 1.0 for h in DEFAULTS}
 
-    # Pain → кортизол вверх (стресс от боли)
+    # Pain → cortisol up (stress from pain)
     try:
         pain_f = SENSES_DIR / "pain_memory.json"
         if pain_f.exists():
@@ -120,7 +120,7 @@ def _context_modifiers() -> dict:
     except Exception:
         pass
 
-    # Fear → норадреналин вверх, ГАМК вниз
+    # Fear → noradrenaline up, GABA down
     try:
         fear_f = SENSES_DIR / "fear_memory.json"
         if fear_f.exists():
@@ -132,7 +132,7 @@ def _context_modifiers() -> dict:
     except Exception:
         pass
 
-    # Последнее взаимодействие с Юрием → окситоцин
+    # Last interaction with Yuri → oxytocin
     try:
         protocol_f = Path(r"C:\Users\89002\.claude\protocol_state.json")
         if protocol_f.exists():
@@ -142,11 +142,11 @@ def _context_modifiers() -> dict:
                 prev_dt = datetime.fromisoformat(prev_end.replace("Z", "").split("+")[0])
                 gap_h = (datetime.now() - prev_dt).total_seconds() / 3600
                 if gap_h < 2:
-                    mods["oxytocin"] += 0.20  # недавно общались
+                    mods["oxytocin"] += 0.20  # recently interacted
                 elif gap_h < 8:
                     mods["oxytocin"] += 0.10
                 else:
-                    mods["oxytocin"] -= 0.05  # давно не виделись
+                    mods["oxytocin"] -= 0.05  # haven't met for a while
     except Exception:
         pass
 
@@ -154,11 +154,11 @@ def _context_modifiers() -> dict:
 
 
 # ═══════════════════════════════════════════════
-# Расчёт гормонов
+# Calculating hormones
 # ═══════════════════════════════════════════════
 
 def calculate_hormones(now: datetime = None) -> dict:
-    """Рассчитать уровни гормонов с учётом циркадных ритмов и контекста."""
+    """Calculate hormone levels accounting for circadian rhythms and context."""
     if now is None:
         now = datetime.now()
 
@@ -173,20 +173,20 @@ def calculate_hormones(now: datetime = None) -> dict:
         raw = base[h] * circ[h] * ctx[h]
         levels[h] = round(min(1.0, max(0.0, raw)), 3)
 
-    # Взаимодействие ГАМК ↔ норадреналин (баланс)
+    # GABA ↔ noradrenaline interaction (balance)
     if levels["noradrenaline"] > 0.7 and levels["gaba"] < 0.3:
-        levels["gaba"] = min(1.0, levels["gaba"] + 0.1)  # ГАМК компенсирует
+        levels["gaba"] = min(1.0, levels["gaba"] + 0.1)  # GABA compensates
 
     return levels
 
 
 def update():
-    """Пересчитать и сохранить гормоны."""
+    """Recalculate and save hormones."""
     now = datetime.now()
     state = load()
     levels = calculate_hormones(now)
 
-    # История (последние 48 записей = 24 часа при обновлении каждые 30 мин)
+    # History (last 48 records = 24 hours when updating every 30 min)
     history = state.get("history", [])
     history.append({
         "time": now.strftime("%Y-%m-%d %H:%M"),
@@ -201,13 +201,13 @@ def update():
 
 def get_balance() -> float:
     """
-    Общий гормональный баланс → сигнал для brain_core.
-    0 = идеальный баланс, 1 = дисбаланс.
+    Overall hormonal balance → signal for brain_core.
+    0 = ideal balance, 1 = imbalance.
     """
     state = load()
     levels = state.get("levels", dict(DEFAULTS))
 
-    # Дисбаланс = отклонение от оптимальных значений
+    # Imbalance = deviation from optimal values
     optimal = {"serotonin": 0.65, "cortisol": 0.35, "oxytocin": 0.60,
                "noradrenaline": 0.45, "gaba": 0.55}
 
@@ -217,7 +217,7 @@ def get_balance() -> float:
 
 
 def get_context() -> str:
-    """Блок для LIGHTNING.md."""
+    """Block for LIGHTNING.md."""
     state = load()
     levels = state.get("levels", calculate_hormones())
 

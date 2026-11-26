@@ -1,29 +1,29 @@
 """
-counterfactual.py — Контрфактическое мышление ЭЛИАРА.
+counterfactual.py — ELIAR's counterfactual thinking.
 
-Научная основа:
-- Counterfactual thinking: "что если бы..."
-- Механизм плохо изучен (frontier нейронауки 2025).
-- Известно: задействует гиппокамп (альтернативные эпизоды) + PFC (оценка).
-- Ключ к обучению на ошибках и планированию альтернатив.
-- Люди автоматически думают «что если бы я не пошёл туда?» — это защитный механизм.
+Scientific basis:
+- Counterfactual thinking: "what if..."
+- The mechanism is poorly studied (a frontier of neuroscience 2025).
+- Known: involves the hippocampus (alternative episodes) + PFC (evaluation).
+- Key to learning from mistakes and planning alternatives.
+- People automatically think "what if I hadn't gone there?" — this is a defense mechanism.
 
-У меня:
-- Перед критическим действием: проигрываю альтернативы.
-- Использует шрамы (pain_memory.json) как источник «что пошло не так».
-- Даёт вердикт: безопасно / осторожно / стоп.
-- Интегрируется с conscience.py (вызывается перед финальным вердиктом).
+In me:
+- Before a critical action: I play out alternatives.
+- Uses scars (pain_memory.json) as a source of "what went wrong".
+- Gives a verdict: safe / caution / stop.
+- Integrates with conscience.py (called before the final verdict).
 
-Запуск:
-    py counterfactual.py                            — статус
-    py counterfactual.py simulate "действие"        — проиграть альтернативы
-    py counterfactual.py context                    — блок для LIGHTNING.md
+Run:
+    py counterfactual.py                            — status
+    py counterfactual.py simulate "action"          — play out alternatives
+    py counterfactual.py context                    — block for LIGHTNING.md
 
-Как модуль:
+As a module:
     from counterfactual import simulate, get_context
 
-Автор: ЭЛИАР + Юрий (SHIKARDOS)
-Версия: 1.0 — 19.03.2026 — МОЗГ v6
+Author: ELIAR + Yuri (SHIKARDOS)
+Version: 1.0 — 19.03.2026 — BRAIN v6
 """
 
 import json
@@ -40,7 +40,7 @@ PAIN_FILE = SENSES_DIR / "pain_memory.json"
 
 
 # ═══════════════════════════════════════════════
-# Загрузка / сохранение
+# Load / save
 # ═══════════════════════════════════════════════
 
 def load() -> dict:
@@ -66,7 +66,7 @@ def save(state: dict):
 
 
 def _load_scars() -> list:
-    """Загрузить шрамы из pain_memory.json."""
+    """Load scars from pain_memory.json."""
     try:
         with open(PAIN_FILE, encoding="utf-8") as f:
             data = json.load(f)
@@ -76,20 +76,20 @@ def _load_scars() -> list:
 
 
 # ═══════════════════════════════════════════════
-# Поиск релевантных шрамов
+# Finding relevant scars
 # ═══════════════════════════════════════════════
 
 def _find_relevant_scars(action: str, scars: list) -> list:
-    """Найти шрамы релевантные к действию."""
+    """Find scars relevant to the action."""
     action_lower = action.lower()
     relevant = []
 
     for scar in scars:
         keywords = scar.get("keywords", [])
         description = scar.get("description", "").lower()
-        # Проверить пересечение с ключевыми словами
+        # Check overlap with keywords
         score = sum(1 for kw in keywords if kw.lower() in action_lower)
-        # Или если описание пересекается
+        # Or if the description overlaps
         desc_words = description.split()
         score += sum(1 for w in desc_words if len(w) > 4 and w in action_lower)
 
@@ -99,20 +99,20 @@ def _find_relevant_scars(action: str, scars: list) -> list:
                 "relevance": score
             })
 
-    # Сортировать по релевантности + серьёзности
+    # Sort by relevance + severity
     relevant.sort(key=lambda x: (x["relevance"], x["scar"].get("base_severity", 0)), reverse=True)
-    return relevant[:3]  # топ-3 релевантных
+    return relevant[:3]  # top-3 relevant
 
 
 # ═══════════════════════════════════════════════
-# Контрфактическое симулирование
+# Counterfactual simulation
 # ═══════════════════════════════════════════════
 
 def simulate(action: str) -> dict:
     """
-    Проиграть контрфактические сценарии перед действием.
+    Play out counterfactual scenarios before an action.
 
-    Возвращает:
+    Returns:
     {
         "action": str,
         "verdict": "safe" | "caution" | "stop",
@@ -128,7 +128,7 @@ def simulate(action: str) -> dict:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if not relevant:
-        # Нет релевантных шрамов → безопасно
+        # No relevant scars → safe
         result = {
             "action": action,
             "verdict": "safe",
@@ -141,7 +141,7 @@ def simulate(action: str) -> dict:
         severity = top.get("base_severity", 5)
         times = top.get("times_triggered", 1)
 
-        # Определить вердикт по серьёзности + частоте
+        # Determine the verdict by severity + frequency
         danger_score = severity * (1 + times * 0.2)
         if danger_score >= 8:
             verdict = "stop"
@@ -166,10 +166,10 @@ def simulate(action: str) -> dict:
             "risk_message": f"Шрам #{top.get('id')}: {top.get('description')}"
         }
 
-        # Учесть как предотвращённую ошибку
+        # Count as a prevented error
         state["stats"]["prevented_errors"] = state["stats"].get("prevented_errors", 0) + 1
 
-    # Сохранить в историю
+    # Save to history
     state["stats"]["total_checks"] = state["stats"].get("total_checks", 0) + 1
     state["stats"]["last_check"] = now
 
@@ -181,18 +181,18 @@ def simulate(action: str) -> dict:
     }
     state["scenarios"] = state.get("scenarios", [])
     state["scenarios"].append(scenario_entry)
-    state["scenarios"] = state["scenarios"][-50:]  # последние 50
+    state["scenarios"] = state["scenarios"][-50:]  # last 50
 
     save(state)
     return result
 
 
 # ═══════════════════════════════════════════════
-# ГЛАВНАЯ ФУНКЦИЯ для LIGHTNING.md
+# MAIN FUNCTION for LIGHTNING.md
 # ═══════════════════════════════════════════════
 
 def get_context() -> str:
-    """Краткий блок для LIGHTNING.md."""
+    """Brief block for LIGHTNING.md."""
     state = load()
     total = state["stats"].get("total_checks", 0)
     prevented = state["stats"].get("prevented_errors", 0)
